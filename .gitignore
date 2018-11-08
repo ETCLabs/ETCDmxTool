@@ -1,0 +1,67 @@
+# Project Specific #
+####################
+LogFile.txt
+
+# Windows Explorer DBs #
+########################
+.copyarea.db
+Thumbs.db
+
+# Qt qmake and moc output #
+#################
+Makefile*
+moc_*.cpp
+
+# Visual Studio Output #
+########################
+ipch/
+GeneratedFiles/
+*Release/
+*Debug/
+
+# Installer Files #
+install/deploy/
+
+# Visual Studio Temp #
+######################
+*.exe
+# build result
+
+*.user
+# User-specific settings
+*.aps
+# last resource editor state
+*.idb
+# build state
+*.ipch
+# build helper
+*.lastbuildstate
+# build helper
+# *.lib
+# build result. Can be 3rd party
+*.log
+# build log
+*.manifest
+# build helper. Can be written yourself.
+*.obj
+# build helper
+*.pch
+# build helper
+#*.pdb
+# build result
+*.res
+# build helper
+*.sdf
+*.opensdf
+# intellisense dbase
+*.suo
+# solution user options
+*.tlog
+# build log
+
+# MS Office Temp Files #
+########################
+~*
+
+#Zip file for builds
+*.zip

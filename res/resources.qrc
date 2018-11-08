@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/MainWindow">
+        <file alias="start.png">start.png</file>
+        <file alias="stop.png">stop.png</file>
+        <file alias="open.png">open.png</file>
+        <file alias="save.png">save.png</file>
+        <file alias="restart.png">restart.png</file>
+        <file>rx.png</file>
+        <file>tx.png</file>
+        <file>icon_16.png</file>
+        <file>icon_32.png</file>
+        <file>capture_dis.png</file>
+        <file>capture_en.png</file>
+        <file>transmit_dis.png</file>
+        <file>transmit_en.png</file>
+        <file>controller_dis.png</file>
+        <file>controller_en.png</file>
+        <file>add_btn.png</file>
+        <file>remove_btn.png</file>
+        <file>controller_off.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file alias="estaid.csv">estaid.csv</file>
+    </qresource>
+</RCC>
