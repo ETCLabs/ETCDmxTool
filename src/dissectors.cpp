@@ -37,6 +37,7 @@ dissectors::dissectors(QObject *parent) : QObject(parent)
             {
                 qDebug() << "...Loaded:" << dissector->getProtocolName().toString() << "Startcode(s):" << dissector->getStartCodes();
                 m_dissectors.append(new s_DissectorList(dissector));
+                m_dissectors.last()->setEnabled(dissector->enableByDefault());
             } else {
                 qDebug() << "...Invalid" << dissectorDll;
             }

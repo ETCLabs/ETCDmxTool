@@ -34,6 +34,11 @@ QVariant RdmPlugin::getProtocolName()
     return "RDM";
 }
 
+bool RdmPlugin::enableByDefault()
+{
+    return true;
+}
+
 QList<quint8> RdmPlugin::getStartCodes()
 {
     QList<quint8> startCodes;
