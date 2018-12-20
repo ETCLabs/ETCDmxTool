@@ -21,7 +21,7 @@
 #include "rdmcontroller.h"
 #include "etc_include/RdmDeviceInfo.h"
 #include "etc_include/RDM_CmdC.h"
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 #include "rdm/estardm.h"
 #include "util.h"
 #include <QTimer>

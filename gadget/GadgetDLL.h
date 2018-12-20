@@ -1,6 +1,5 @@
-#ifndef __GadgetExport_h
-#define __GadgetExport_h
-
+#ifndef __Export_h
+#define __Export_h
 
 
 #define DllImport   __declspec( dllimport )
@@ -83,9 +82,9 @@ extern "C"
 
 	DllExport unsigned int Gadget2_GetGadgetSerialNumber(int DeviceNum);
 
-	DllExport int Gadget2_GetNumberOfRXRawBytes(int DeviceNum);
+	DllExport int Gadget2_GetNumberOfRXRawBytes(int DeviceNum, int PortNum);
 
-	DllExport void Gadget2_GetRXRawBytes(int DeviceNum, unsigned short * Data, int Length);
+	DllExport void Gadget2_GetRXRawBytes(int DeviceNum, int PortNum, unsigned short * Data, int Length);
 	
 	DllExport void Gadget2_SendRawBytes(int DeviceNum, int PortNum, unsigned char * Data, int Length);
 

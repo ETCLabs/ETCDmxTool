@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 
 #include "capturedevice.h"
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 #include "ftd2xx.h"
 #include "whip/ftdcomm.h"
 #include "rdm/estardm.h"
@@ -160,11 +160,11 @@ GadgetCaptureDevice::~GadgetCaptureDevice()
 
 void GadgetCaptureDevice::readData()
 {
-    int numBytes = Gadget2_GetNumberOfRXRawBytes(m_deviceNum);
+    int numBytes = Gadget2_GetNumberOfRXRawBytes(m_deviceNum, m_port);
     if(numBytes>0)
     {
         quint16* buffer = new quint16[numBytes];
-        Gadget2_GetRXRawBytes(m_deviceNum, buffer, numBytes);
+        Gadget2_GetRXRawBytes(m_deviceNum, m_port, buffer, numBytes);
         qDebug() << "Got " << numBytes << " bytes";
 
         for(int i=0; i<numBytes; i++)
