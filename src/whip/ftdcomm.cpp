@@ -50,8 +50,6 @@ FTDCommError FTDComm::Open(int DeviceNum)
 				{
 					DeviceOpen = true;
 					Result = FTDCOMM_OK;
-					file.setFileName("LogFile.txt");
-					file.open(QIODevice::WriteOnly);
 				}
 			}
 			else
@@ -86,7 +84,6 @@ FTDCommError FTDComm::Close()
 		{
 			DeviceOpen = false;
 			Result = FTDCOMM_OK;
-			file.close();
 		}
 	}
 	else
@@ -208,26 +205,8 @@ FTDCommError FTDComm::SendBreakStartAndData(unsigned char StartCode, unsigned ch
 		{
 			if(SendData(&StartCode, 1) == FTDCOMM_OK)
 			{
-				QString Str = "";
-				QString Addr;
 				Result = SendData(Data, DataLength);
 				SendHoldOff();
-				if(file.isOpen())
-				{
-					Str.sprintf("\r\nTX - BREAK ");
-                    file.write(Str.toLatin1());
-					
-					Str.sprintf("%02X ", StartCode);
-                    file.write(Str.toLatin1());
-
-					for(int Index = 0; Index < DataLength; Index++)
-					{
-						Str.sprintf("%02X ", Data[Index]);
-                        file.write(Str.toLatin1());
-					}
-					//Str.sprintf("\r\n");
-                    //file.write(Str.toLatin1());
-				}
 			}
 		}
 	}
@@ -281,22 +260,6 @@ int FTDComm::ReceiveData(unsigned short * Data, DWORD MaxLength)
 				if(FT_Read(DeviceHandle, PackedData, RXBytes, &RXBytes) == FT_OK)
                 {
 					BytesReceived = UnPackIncomingBytes(PackedData, Data, RXBytes);
-					for(int Index = 0; Index < BytesReceived; Index++)
-					{
-						QString Str;
-						if(Data[Index] == 0xBB00)
-						{
-							Str.sprintf("\r\nRX - BREAK ");
-                            file.write(Str.toLatin1());
-						}
-						else
-						{
-							Str.sprintf("%02X ", Data[Index]);
-                            file.write(Str.toLatin1());
-						}
-
-					}
-
 				}
 			}
 		}
