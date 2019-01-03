@@ -194,7 +194,7 @@ FTDCommError FTDComm::SendData(unsigned char * Data, int DataLength)
 		{
 			Result = FTDCOMM_OK;
 		}
-		delete PackedData;
+        delete[] PackedData;
 	}
 	return Result;
 }
@@ -301,7 +301,7 @@ int FTDComm::ReceiveData(unsigned short * Data, DWORD MaxLength)
 			}
 		}
 	}
-	delete PackedData;
+    delete[] PackedData;
 	return BytesReceived;
 }
 
