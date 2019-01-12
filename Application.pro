@@ -34,21 +34,43 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += QT_DLL
 
-win32:LIBS += -l$$PWD/whip/ftd2xx -l$$PWD/gadget/GadgetDll
+# FTDI (Whip)
+INCLUDEPATH += whip
+HEADERS +=  src/whip/ftdcomm.h
+SOURCES +=  src/whip/ftdcomm.cpp
+contains(QT_ARCH, i386) {
+    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/whip/win32 -lftd2xx
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/win32 -lftd2xxd
+    else:unix: LIBS += -L$$PWD/whip/linux-i386 -lftd2xx
+} else {
+    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/whip/win32 -lftd2xx
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/win32 -lftd2xxd
+    else:unix: LIBS += -L$$PWD/whip/linux-x64 -lftd2xx
+}
 
-INCLUDEPATH *=  \
-    src/ \
-    RDM/ \
-    whip/ \
-    gadget
+# Gadget II
+win32 {
+    DEFINES += GADGET2
+    INCLUDEPATH += gadget
+    LIBS +=  -l$$PWD/gadget/GadgetDll
+}
+
+# RDM Controller
+win32 {
+    DEFINES += RDMCONTROL
+    INCLUDEPATH += RDM
+    SOURCES += src/rdm/rdmcontroller.cpp \
+        src/rdm/rdmpidstrings.cpp
+    HEADERS += src/rdm/rdmcontroller.h \
+        src/rdm/rdmEtcConsts.h \
+        src/rdm/estardm.h \
+        src/rdm/rdmpidstrings.h
+}
+
+INCLUDEPATH *= src
 
 HEADERS += src/e110_startcodes.h \
-    src/rdm/estardm.h \
-    src/rdm/rdmcontroller.h \
-    src/rdm/rdmEtcConsts.h \
-    src/rdm/rdmpidstrings.h \
     src/dissectors/dissectorplugin.h \
-    src/whip/ftdcomm.h \
     src/mainwindow.h \
     src/packettable.h \
     src/packetbuffer.h \
@@ -68,9 +90,6 @@ HEADERS += src/e110_startcodes.h \
     src/updatedialog.h
 
 SOURCES += src/main.cpp \
-    src/rdm/rdmcontroller.cpp \
-    src/rdm/rdmpidstrings.cpp \
-    src/whip/FTDComm.cpp \
     src/mainwindow.cpp \
     src/packetbuffer.cpp \
     src/packettable.cpp \
@@ -101,6 +120,7 @@ CONFIG(release, debug|release) {
     DESTDIR = $${OUT_PWD}/release
 }
 
+win32 {
 TARGET_CUSTOM_EXT = .exe
 DEPLOY_DIR = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy))
 DEPLOY_TARGET = $$shell_quote($$system_path($${DESTDIR}/$${TARGET}$${TARGET_CUSTOM_EXT}))
@@ -138,4 +158,5 @@ CONFIG(release, debug|release) {
     QMAKE_POST_LINK += $${DEPLOY_COMMAND} $${DEPLOY_TARGET} $${DEPLOY_OPT} $$escape_expand(\\n\\t)
     QMAKE_POST_LINK += $${DEPLOY_CLEANUP} $$escape_expand(\\n\\t)
     QMAKE_POST_LINK += $${DEPLOY_INSTALLER} $$escape_expand(\\n\\t)
+}
 }

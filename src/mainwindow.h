@@ -28,6 +28,7 @@
 #include "whip/ftdcomm.h"
 #include <QElapsedTimer>
 #include <QProgressBar>
+#include <QComboBox>
 
 #include "dissectors.h"
 #include "packettable.h"
@@ -59,15 +60,17 @@ public slots:
     void on_actionUpdateGadget_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
-    void modeButtonPressed(bool checked);
-    void on_twRdmDevices_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
+    void modeButtonPressed();
     void on_tbDmxStartPrev_pressed();
     void on_tbDmxStartNext_pressed();
     void on_sbDmxStart_valueChanged(int value);
+#if defined (RDMCONTROL)
+    void on_twRdmDevices_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_clbGetSensorData_pressed();
     void on_tbAddRawCmdData_pressed();
     void on_tbRemoveRawCmdData_pressed();
     void on_btnSendCustomRDM_pressed();
+#endif
     void timestampDisplayChanged();
     void logCategoryToggle(bool checked);
     void logSeverityToggle(bool checked);
@@ -86,6 +89,7 @@ private slots:
     void openFileComplete();
 
     // RDM Controller
+#if defined (RDMCONTROL)
     void on_clbDiscoverRdm_pressed();
     void gotDiscoveryData();
     void updateRdmDisplay();
@@ -93,6 +97,7 @@ private slots:
     void setupRawDataEditor(int datatype, int row);
     void composeRawCommand();
     void rawCommandComplete(quint8 response, const QByteArray &data);
+#endif
 
 private:
     Q_SIGNAL void updateStatusBarMsg();
@@ -157,7 +162,10 @@ private:
 
 	void highlightPacketBytes(int start, int end);
 
+    // RDM Controller
+#if defined (RDMCONTROL)
     RdmDeviceInfo *selectedDevice();
+#endif
 
     dissectors m_dissectorList;
     PacketTable m_packetTable;

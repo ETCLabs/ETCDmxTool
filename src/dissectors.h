@@ -26,7 +26,7 @@
 #include <QList>
 #include <QLibrary>
 #include "packetbuffer.h"
-#include "dissectors\dissectorplugin.h"
+#include "dissectors/dissectorplugin.h"
 
 class dissectors : public QObject
 {

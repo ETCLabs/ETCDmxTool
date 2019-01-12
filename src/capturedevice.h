@@ -122,6 +122,7 @@ private:
     bool m_enabled = true;
 };
 
+#if defined (GADGET2)
 class GadgetCaptureDevice : public ICaptureDevice
 {
     Q_OBJECT
@@ -157,6 +158,7 @@ private:
     QList<RdmDeviceInfo *> m_infoList;
     bool m_enabled = true;
 };
+#endif //GADGET2
 
 
 #endif // CAPTUREDEVICE_H

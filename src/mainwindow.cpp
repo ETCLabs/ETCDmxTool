@@ -35,6 +35,7 @@
 #include <QListView>
 #include <QStandardPaths>
 #include <QDirIterator>
+#include <cmath>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -50,11 +51,15 @@
 #include "pcap/pcapng.h"
 
 // RDM Controller
-#include "rdm/rdmcontroller.h"
 #include "rdm/estardm.h"
+#if defined(RDMCONTORL)
+#include "rdm/rdmcontroller.h"
 #include "rdm/rdmpidstrings.h"
 #include "etc_include/RDM_CmdC.h"
-#include "GadgetDLL.h"
+#endif
+#if defined(GADGET2)
+#include "GadgetExport.h"
+#endif
 
 // Logging
 #include "logmodel.h"
@@ -135,10 +140,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         LogModel::log(tr("Starting up, using device %1").arg(captureDevice->description()), CDL_SEV_INF, 1);
     }
 
-
+    #if defined (RDMCONTROL)
     // Setup the RDM controller. Currently supported by Gadget2 only, and if in offline mode
     GadgetCaptureDevice *gadgetDevice = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
-
     if(gadgetDevice)
     {
         m_controller = new RDMController(gadgetDevice, this);
@@ -157,6 +161,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     {
         ui.tbController->setEnabled(false);
     }
+    #endif
 
     ui.actionUpdateGadget->setEnabled(gadgetDevice!=Q_NULLPTR);
 
@@ -670,6 +675,15 @@ void MainWindow::stopCapture()
 {
     if (m_captureDevice)
         m_captureDevice->close();
+    }
+
+    if(ui.stackedWidget->currentIndex()==0)
+        ui.statusBar->showMessage(tr("Stopped Capturing"));
+    if(ui.stackedWidget->currentIndex()==1)
+        ui.statusBar->showMessage(tr("Stopped Sending"));
+
+    ui.actionStart_Capture->setChecked(false);
+    ui.actionStop_Capture->setEnabled(false);
 }
 
 void MainWindow::updateTreeWidget(int currentRow)
@@ -828,11 +842,15 @@ void MainWindow::selectionChanged(const QModelIndex &current, const QModelIndex 
 
 void MainWindow::on_actionAbout_triggered()
 {
-	QMessageBox::about(this,
-                    tr("About ETCDmxTool"),
-                    tr("ETCDmxTool\nSimple RDM/DMX/RS485 sniffer using the ETC USB Whip and Gadget\n(c) 2016 ETC Inc.\nVersion %1\nGadget DLL version %2")
-                       .arg(VERSION)
-                       .arg(Gadget2_GetDllVersion()));
+    QString str = tr("ETCDmxTool\nSimple RDM/DMX/RS485 sniffer using the ETC USB Whip and Gadget\n(c) 2016 ETC Inc.\nVersion %1")
+            .arg(VERSION);
+
+#if defined (GADGET2)
+    str.append(tr("\nGadget DLL version %1").arg(Gadget2_GetDllVersion()));
+#endif
+
+
+    QMessageBox::about(this, tr("About ETCDmxTool"), str);
 }
 
 void MainWindow::setFilterColumn(int index)
@@ -905,6 +923,7 @@ void MainWindow::fadeTick()
     }
 }
 
+#if defined (RDMCONTROL)
 void MainWindow::on_clbDiscoverRdm_pressed()
 {
     m_controller->startDiscovery();
@@ -1117,6 +1136,7 @@ void MainWindow::updateRdmDisplay()
 
     ui.twSensors->setVerticalHeaderLabels(vhLabels);
 }
+#endif // RDMCONTROL
 
 
 void MainWindow::on_actionExport_to_PcapNg_triggered()
@@ -1216,6 +1236,7 @@ void MainWindow::on_sbDmxStart_valueChanged(int value)
     }
 }
 
+#if defined (RDMCONTROL)
 RdmDeviceInfo *MainWindow::selectedDevice()
 {
     if(!m_controller) return Q_NULLPTR;
@@ -1441,6 +1462,7 @@ void MainWindow::rawCommandComplete(quint8 response, const QByteArray &data)
     ui.teResponseData->appendPlainText(QString("\r\n"));
     ui.teResponseData->appendPlainText(prettifyHex(data));
 }
+#endif //RDMCONTROL
 
 
 void MainWindow::timestampDisplayChanged()

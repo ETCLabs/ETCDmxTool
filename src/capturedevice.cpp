@@ -19,7 +19,9 @@
 // THE SOFTWARE.
 
 #include "capturedevice.h"
-#include "GadgetDLL.h"
+#if defined (GADGET2)
+#include "GadgetExport.h"
+#endif
 #include "ftd2xx.h"
 #include "whip/ftdcomm.h"
 #include "rdm/estardm.h"
@@ -145,7 +147,7 @@ void WhipCaptureDevice::onTimer()
     }
 }
 
-
+#if defined (GADGET2)
 
 /***************************** GadgetCaptureDevice ****************************************/
 
@@ -304,6 +306,7 @@ void GadgetCaptureDevice::discoveryFinished()
 
     emit discoveryDataReady();
 }
+#endif //GADGET2
 
 
 void GadgetCaptureDevice::updateFirmware(const QString &firmwarePath)
@@ -350,6 +353,7 @@ void GadgetCaptureDevice::handleGadgetUpdate(Gadget2_UpdateStatus status)
 
 CaptureDeviceList::CaptureDeviceList()
 {
+#if defined (GADGET2)
     int result = Gadget2_Connect();
     // Wait for the threads to start up to discover gadgets
     QThread::msleep(1000);
@@ -390,6 +394,7 @@ CaptureDeviceList::CaptureDeviceList()
     }
 
     Gadget2_Disconnect();
+#endif //GADGET2
 
     FTDComm::FtdiDevice SelectedDevice;
     int TempNumDevices = 0;
@@ -429,11 +434,13 @@ ICaptureDevice *CaptureDeviceList::getDevice(int deviceIndex)
 
     CaptureDeviceInfo info = m_devList[deviceIndex];
 
+#if defined (GADGET2)
     if(info.type==DEVTYPE_GADGET)
     {
         GadgetCaptureDevice *device = new GadgetCaptureDevice(info);
         return device;
     }
+#endif
 
     if(info.type==DEVTYPE_WHIP)
     {
