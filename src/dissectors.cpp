@@ -27,7 +27,7 @@ dissectors::dissectors(QObject *parent) : QObject(parent)
 {
     LogModel::log(tr("Loading Dissectors"), CDL_SEV_INF, 1);
     QDir dissectorDir(QDir::currentPath());
-    for (auto dissectorDll : dissectorDir.entryList(QStringList("dissectorplugin*.dll")))
+    for (auto dissectorDll : dissectorDir.entryList(QStringList(disectorPatternMatch)))
     {
         QPluginLoader pluginLoader(dissectorDir.absoluteFilePath(dissectorDll));
         QObject *plugin = pluginLoader.instance();
