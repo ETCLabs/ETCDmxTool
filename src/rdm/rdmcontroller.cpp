@@ -21,7 +21,7 @@
 #include "rdmcontroller.h"
 #include "etc_include/RdmDeviceInfo.h"
 #include "etc_include/RDM_CmdC.h"
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 #include "rdm/estardm.h"
 #include "util.h"
 #include <QTimer>
@@ -83,7 +83,7 @@ void RDMController::advanceDiscoveryStateMachine()
             // Copy the discovered things to our list
             emit log("Finished Discovery");
             emit log(tr("Discovered %1 Devices").arg(Gadget2_GetDiscoveredDevices()));
-            for(int i=0; i<Gadget2_GetDiscoveredDevices(); i++)
+            for(unsigned int i = 0; i < Gadget2_GetDiscoveredDevices(); i++)
             {
                 RdmDeviceInfo *info = Gadget2_GetDeviceInfo(i);
                 m_devices << info;
