@@ -124,8 +124,8 @@ win32 {
 }
 
 # Copy the Gadget and Whip DLL to the debug directory for debugging
-QMAKE_POST_LINK += $$QMAKE_COPY $${GADGET_DLL_SRC} $$shell_quote($$system_path($${OUT_PWD})) $$escape_expand(\\n\\t)
-QMAKE_POST_LINK += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $$shell_quote($$system_path($${OUT_PWD})) $$escape_expand(\\n\\t)
+QMAKE_POST_LINK += $$QMAKE_COPY $${GADGET_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
+QMAKE_POST_LINK += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
 
 CONFIG(release, debug|release) {
     QMAKE_POST_LINK += $${PRE_DEPLOY_COMMAND} $$escape_expand(\\n\\t)

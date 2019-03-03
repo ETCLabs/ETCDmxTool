@@ -19,10 +19,10 @@ SOURCES         = rdmplugin.cpp \
 TARGET          = $$qtLibraryTarget(dissectorpluginRDM)
 
 CONFIG(debug, debug|release) {
-    DESTDIR = ../../../
+    DESTDIR = ../../../debug
 }
 CONFIG(release, debug|release) {
-    DESTDIR = ../../../
+    DESTDIR = ../../../release
 }
 
 
