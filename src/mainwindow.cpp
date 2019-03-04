@@ -33,6 +33,7 @@
 #include <QLineEdit>
 #include <QSignalMapper>
 #include <QDateTime>
+#include <QListView>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -52,6 +53,9 @@
 #include "rdm/rdmpidstrings.h"
 #include "etc_include/RDM_CmdC.h"
 #include "GadgetDLL.h"
+
+// Logging
+#include "logmodel.h"
 
 #include "util.h"
 
@@ -1383,4 +1387,11 @@ void MainWindow::timestampDisplayChanged()
         ui.actionSecondsSincePrevious->setChecked(true);
         m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET);
     }
+}
+
+void MainWindow::on_actionViewLog_triggered()
+{
+    QListView *view = new QListView();
+    view->setModel(LogModel::getInstance());
+    view->show();
 }

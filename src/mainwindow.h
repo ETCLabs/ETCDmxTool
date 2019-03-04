@@ -55,6 +55,7 @@ public slots:
     void on_actionOpen_File_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
+    void on_actionViewLog_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
     void modeButtonPressed();

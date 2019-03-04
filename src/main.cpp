@@ -26,6 +26,7 @@
 #include "fancysliderstyle.h"
 #include "selectdevicedialog.h"
 #include "capturedevice.h"
+#include "logmodel.h"
 
 
 int main(int argc, char *argv[])
@@ -38,6 +39,9 @@ int main(int argc, char *argv[])
     QProxyStyle *style = new FancyFaderStyle;
     style->setBaseStyle(QStyleFactory::create("Fusion"));
     a.setStyle(style);
+
+    // Startup logging
+    LogModel::getInstance();
 
     // First, determine which USB-RDM Adapter to use
     ICaptureDevice *device = Q_NULLPTR;
