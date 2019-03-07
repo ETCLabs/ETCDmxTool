@@ -51,7 +51,7 @@
 #include "rdm/estardm.h"
 #include "rdm/rdmpidstrings.h"
 #include "etc_include/RDM_CmdC.h"
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 
 #include "util.h"
 
