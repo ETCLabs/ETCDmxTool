@@ -11,8 +11,8 @@ SOURCES         = dmxplugin.cpp \
 TARGET          = $$qtLibraryTarget(dissectorpluginDMX)
 
 CONFIG(debug, debug|release) {
-    DESTDIR = ../../../
+    DESTDIR = ../../../debug
 }
 CONFIG(release, debug|release) {
-    DESTDIR = ../../../
+    DESTDIR = ../../../release
 }

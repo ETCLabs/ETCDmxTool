@@ -67,7 +67,7 @@ void ICaptureDevice::setDmxLevels(quint8 *levels, size_t length)
 WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info)
 {
     m_comm = new FTDComm;
-    m_deviceNum = info.index;
+    m_deviceNum = static_cast<int>(info.index);
     m_rxTimer = Q_NULLPTR;
 }
 
@@ -160,14 +160,14 @@ GadgetCaptureDevice::~GadgetCaptureDevice()
 
 void GadgetCaptureDevice::readData()
 {
-    int numBytes = Gadget2_GetNumberOfRXRawBytes(m_deviceNum, m_port);
+    unsigned int numBytes = Gadget2_GetNumberOfRXRawBytes(m_deviceNum, m_port);
     if(numBytes>0)
     {
         quint16* buffer = new quint16[numBytes];
         Gadget2_GetRXRawBytes(m_deviceNum, m_port, buffer, numBytes);
         qDebug() << "Got " << numBytes << " bytes";
 
-        for(int i=0; i<numBytes; i++)
+        for(unsigned int i = 0; i < numBytes; ++i)
         {
             if(buffer[i]==0x8000)
             {
@@ -197,6 +197,7 @@ bool GadgetCaptureDevice::open()
 
 void GadgetCaptureDevice::startReading()
 {
+    Gadget2_SetRawReceiveMode(m_deviceNum, m_port);
     m_rxTimer = new QTimer(this);
     m_rxTimer->setInterval(0);
     connect(m_rxTimer, SIGNAL(timeout()), this, SLOT(readData()));
@@ -254,7 +255,7 @@ void GadgetCaptureDevice::doDiscovery()
 void GadgetCaptureDevice::discoveryFinished()
 {
     m_infoList.clear();
-    for(int i=0; i<Gadget2_GetDiscoveredDevices(); i++)
+    for(unsigned int i = 0; i < Gadget2_GetDiscoveredDevices(); i++)
         m_infoList << Gadget2_GetDeviceInfo(i);
 
     emit discoveryDataReady();
@@ -272,12 +273,11 @@ CaptureDeviceList::CaptureDeviceList()
 
     if(result==1)
     {
-
-        for(int i=0; i<static_cast<int>(Gadget2_GetNumGadgetDevices()); i++)
+        for(unsigned int i=0; i < Gadget2_GetNumGadgetDevices(); i++)
         {
             // Assume two ports per gadget
             // TODO IO cards with more ports..
-            for(int port=1; port<=2; port++)
+            for(unsigned int port=1; port<=2; port++)
             {
                 unsigned char * version = Gadget2_GetGadgetVersion(i);
                 unsigned int serial = Gadget2_GetGadgetSerialNumber(i);

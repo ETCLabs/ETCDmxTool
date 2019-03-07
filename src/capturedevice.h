@@ -47,9 +47,9 @@ public:
 
     struct CaptureDeviceInfo {
         DevType type;
-        int index;
+        unsigned int index;
         QString description;
-        int port;
+        unsigned int port;
         int deviceCapabilities;
     };
 
@@ -135,8 +135,8 @@ private slots:
     void discoveryFinished();
 private:
     QTimer *m_rxTimer;
-    int m_deviceNum;
-    int m_port;
+    unsigned int m_deviceNum;
+    unsigned int m_port;
     QThread *m_gadgetReadThread;
     QByteArray m_packetBuffer;
     QList<RdmDeviceInfo *> m_infoList;

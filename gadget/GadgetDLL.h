@@ -1,94 +1,101 @@
-#ifndef __Export_h
-#define __Export_h
+#ifndef __GadgetExport_h
+#define __GadgetExport_h
 
-
-#define DllImport   __declspec( dllimport )
-#define DllExport   __declspec( dllexport )
+#ifdef GADGET_DLL_EXPORT
+#define GADGET_DLL_API   __declspec( dllexport )
+#else
+#define GADGET_DLL_API   __declspec( dllimport )
+#endif
 
 class RDM_CmdC;
 struct RdmDeviceInfo;
 
-extern "C" 
+#define GADGET_DLL_DMX_BREAK 0x8000
+#define GADGET_DLL_FRAMING_ERROR 0x9000
+
+extern "C"
 {
-	DllExport char * Gadget2_GetDllVersion();
+    GADGET_DLL_API char * Gadget2_GetDllVersion();
 
-	DllExport int Gadget2_Connect();
+    GADGET_DLL_API int Gadget2_Connect();
 
-	DllExport int Gadget2_Disconnect(void);
+    GADGET_DLL_API int Gadget2_Disconnect(void);
 
-	DllExport void Gadget2_StartDiscovery(int DeviceID, int PortNum);
+    GADGET_DLL_API void Gadget2_StartDiscovery(unsigned int DeviceID, unsigned int PortNum);
 
-	DllExport int Gadget2_GetDiscoveredDevices(void);
+    GADGET_DLL_API unsigned int Gadget2_GetDiscoveredDevices(void);
 
-	DllExport RdmDeviceInfo * Gadget2_GetDeviceInfo(int Index);
+    GADGET_DLL_API RdmDeviceInfo * Gadget2_GetDeviceInfo(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceManfID(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceManfID(unsigned int Index);
 
-	DllExport unsigned int Gadget2_GetDeviceID(int Index);
+    GADGET_DLL_API unsigned int Gadget2_GetDeviceID(unsigned int Index);
 
-	DllExport unsigned char * Gadget2_GetDeviceSoftwareVersionLabel(int Index);
+    GADGET_DLL_API unsigned char * Gadget2_GetDeviceSoftwareVersionLabel(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceRDMProtocolVersion(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceRDMProtocolVersion(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceModelID(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceModelID(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceProductCategoryType(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceProductCategoryType(unsigned int Index);
 
-	DllExport unsigned int Gadget2_GetDeviceSoftwareVersionID(int Index);
+    GADGET_DLL_API unsigned int Gadget2_GetDeviceSoftwareVersionID(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceDMXFootprint(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceDMXFootprint(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceDMXPersonality(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceDMXPersonality(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceDMXStartAddress(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceDMXStartAddress(unsigned int Index);
 
-	DllExport unsigned short Gadget2_GetDeviceSubdeviceCount(int Index);
+    GADGET_DLL_API unsigned short Gadget2_GetDeviceSubdeviceCount(unsigned int Index);
 
-	DllExport unsigned char Gadget2_GetDeviceSensorCount(int Index);
-		
-	DllExport int Gadget2_GetNumResponses(void);
+    GADGET_DLL_API unsigned char Gadget2_GetDeviceSensorCount(unsigned int Index);
 
-	DllExport RDM_CmdC * Gadget2_GetResponse(int Index);
+    GADGET_DLL_API unsigned int Gadget2_GetNumResponses(void);
 
-	DllExport void Gadget2_ClearResponse(int Index);
+    GADGET_DLL_API RDM_CmdC * Gadget2_GetResponse(unsigned int Index);
 
-	DllExport unsigned char Gadget2_GetResponseCommand(int Index);
-	
-	DllExport unsigned short Gadget2_GetResponseParameter(int Index);
-	
-	DllExport unsigned short Gadget2_GetResponseSubdevice(int Index);
-	
-	DllExport unsigned char Gadget2_GetResponseLength(int Index);
-	
-	DllExport unsigned char * Gadget2_GetResponseBuffer(int Index);
-	
-	DllExport unsigned char Gadget2_GetResponseResponseType(int Index);
-	
-	DllExport unsigned short Gadget2_GetResponseManufacturer_id(int Index);
-	
-	DllExport unsigned int Gadget2_GetResponseDevice_id(int Index);
+    GADGET_DLL_API void Gadget2_ClearResponse(unsigned int Index);
 
-	DllExport void Gadget2_SendRDMCommand(int DeviceNum, int PortNum, unsigned char Cmd, unsigned short ParameterID, unsigned short SubDevice, unsigned char DataLen, const char * Buffer, unsigned short ManfID, unsigned int DevID);
+    GADGET_DLL_API unsigned char Gadget2_GetResponseCommand(unsigned int Index);
 
-	DllExport void Gadget2_SendDMX(int DeviceNum, int PortNum, unsigned char * Buffer, int Size);
+    GADGET_DLL_API unsigned short Gadget2_GetResponseParameter(unsigned int Index);
 
-	DllExport void Gadget2_DisableDMX(int DeviceNum, int PortNum);
+    GADGET_DLL_API unsigned short Gadget2_GetResponseSubdevice(unsigned int Index);
 
-	DllExport void Gadget2_ToggleRDMDiscovery(int DeviceNum, int PortNum, unsigned char Enable);
+    GADGET_DLL_API unsigned char Gadget2_GetResponseLength(unsigned int Index);
 
-	DllExport unsigned int Gadget2_GetNumGadgetDevices();
+    GADGET_DLL_API unsigned char * Gadget2_GetResponseBuffer(unsigned int Index);
 
-	DllExport unsigned char * Gadget2_GetGadgetVersion(int DeviceNum);
+    GADGET_DLL_API unsigned char Gadget2_GetResponseResponseType(unsigned int Index);
 
-	DllExport unsigned int Gadget2_GetGadgetSerialNumber(int DeviceNum);
+    GADGET_DLL_API unsigned short Gadget2_GetResponseManufacturer_id(unsigned int Index);
 
-	DllExport int Gadget2_GetNumberOfRXRawBytes(int DeviceNum, int PortNum);
+    GADGET_DLL_API unsigned int Gadget2_GetResponseDevice_id(unsigned int Index);
 
-	DllExport void Gadget2_GetRXRawBytes(int DeviceNum, int PortNum, unsigned short * Data, int Length);
-	
-	DllExport void Gadget2_SendRawBytes(int DeviceNum, int PortNum, unsigned char * Data, int Length);
+    GADGET_DLL_API void Gadget2_SendRDMCommand(unsigned int DeviceNum, unsigned int PortNum, unsigned char Cmd, unsigned short ParameterID, unsigned short SubDevice, unsigned char DataLen, const char * Buffer, unsigned short ManfID, unsigned int DevID);
 
-	DllExport void Gadget2_SendBreakAndData(int DeviceNum, int PortNum, unsigned char StartCode, unsigned char * Data, int Length);
+    GADGET_DLL_API void Gadget2_SendDMX(unsigned int DeviceNum, unsigned int PortNum, unsigned char * Buffer, unsigned int Size);
+
+    GADGET_DLL_API void Gadget2_DisableDMX(unsigned int DeviceNum, unsigned int PortNum);
+
+    GADGET_DLL_API void Gadget2_ToggleRDMDiscovery(unsigned int DeviceNum, unsigned int PortNum, unsigned char Enable);
+
+    GADGET_DLL_API unsigned int Gadget2_GetNumGadgetDevices();
+
+    GADGET_DLL_API unsigned char * Gadget2_GetGadgetVersion(unsigned int DeviceNum);
+
+    GADGET_DLL_API unsigned int Gadget2_GetGadgetSerialNumber(unsigned int DeviceNum);
+
+    GADGET_DLL_API int Gadget2_SetRawReceiveMode(unsigned int DeviceNum, unsigned int PortNum);
+
+    GADGET_DLL_API unsigned int Gadget2_GetNumberOfRXRawBytes(unsigned int DeviceNum, unsigned int PortNum);
+
+    GADGET_DLL_API void Gadget2_GetRXRawBytes(unsigned int DeviceNum, unsigned int PortNum, unsigned short * Data, unsigned int Length);
+
+    GADGET_DLL_API void Gadget2_SendRawBytes(unsigned int DeviceNum, unsigned int PortNum, unsigned char * Data, unsigned int Length);
+
+    GADGET_DLL_API void Gadget2_SendBreakAndData(unsigned int DeviceNum, unsigned int PortNum, unsigned char StartCode, unsigned char * Data, unsigned int Length);
 
 }
 
