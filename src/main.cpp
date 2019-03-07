@@ -42,6 +42,9 @@ int main(int argc, char *argv[])
 
     // Startup logging
     LogModel::getInstance();
+    LogModel::log(QString("Application Starting, version %1").arg(VERSION)
+                  , CDL_SEV_INF
+                  , 1);
 
     // First, determine which USB-RDM Adapter to use
     ICaptureDevice *device = Q_NULLPTR;

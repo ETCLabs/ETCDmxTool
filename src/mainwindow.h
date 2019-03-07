@@ -58,7 +58,7 @@ public slots:
     void on_actionViewLog_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
-    void modeButtonPressed();
+    void modeButtonPressed(bool checked);
     void on_twRdmDevices_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_tbDmxStartPrev_pressed();
     void on_tbDmxStartNext_pressed();

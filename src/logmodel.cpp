@@ -1,5 +1,7 @@
 #include "logmodel.h"
 
+#include <QDateTime>
+
 LogModel *LogModel::m_instance = nullptr;
 
 LogModel *LogModel::getInstance()
@@ -17,8 +19,6 @@ LogModel::LogModel(QObject *parent)
 
 int LogModel::rowCount(const QModelIndex &parent) const
 {
-    // For list models only the root node (an invalid parent) should return the list's size. For all
-    // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
     if (parent.isValid())
         return 0;
 
@@ -39,8 +39,24 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
 void LogModel::logData(const char *data)
 {
     emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
-    m_logStrings << QString::fromLatin1(data);
+    m_logStrings <<  QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + QString::fromLatin1(data);
     emit endInsertRows();
+}
+
+void LogModel::doLog(const QString &message, quint32 severity, int verbosity)
+{
+    if(severity<=m_severity && verbosity<=m_verbosity)
+    {
+        emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
+        QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
+        m_logStrings << data;
+        emit endInsertRows();
+    }
+}
+
+void LogModel::log(const QString &message, quint32 severity, int verbosity)
+{
+    LogModel::getInstance()->doLog(message, severity, verbosity);
 }
 
 void __stdcall GadgetLogCallback(const char* logData)

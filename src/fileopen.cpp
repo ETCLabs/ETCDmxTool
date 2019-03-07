@@ -87,7 +87,6 @@ void FileOpen::doRead()
         line = m_stream->readLine();
     }
 
-    qDebug("Done");
     emit Finished();
 }
 

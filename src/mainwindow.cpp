@@ -22,7 +22,6 @@
 
 #include <QTimer>
 #include <QMessageBox>
-#include <QDebug>
 #include <QFileDialog>
 #include <QComboBox>
 #include <QLabel>
@@ -127,6 +126,12 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     ui.toolBar->setParent(ui.centralWidget);
     ui.snifferToolsLayout->addWidget(ui.toolBar);
 
+    if(!captureDevice)
+        LogModel::log(tr("Starting up, offline mode"), CDL_SEV_INF, 1);
+    else {
+        LogModel::log(tr("Starting up, using device %1").arg(captureDevice->description()), CDL_SEV_INF, 1);
+    }
+
 
     // Setup the RDM controller. Currently supported by Gadget2 only, and if in offline mode
     GadgetCaptureDevice *gadgetDevice = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
@@ -216,9 +221,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
 
     ui.tbSniffer->setChecked(true);
 
-    connect(ui.tbController,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbSniffer,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbTxMode,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
+    connect(ui.tbController,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbSniffer,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbTxMode,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
 
     // Packet table
     // Filtering model
@@ -401,6 +406,35 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     connect(ui.actionSecondsSinceBeginning, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
     connect(ui.actionSecondsSincePrevious, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
 
+
+    // Logging
+    ui.lvLog->setModel(LogModel::getInstance());
+    connect(ui.lvLog->model(), SIGNAL(rowsInserted(QModelIndex,int,int)),
+            ui.lvLog, SLOT(scrollToBottom()));
+    ui.dwLogging->close();
+
+    ui.sbLogVerbosity->setMinimum(CDL_VERB_MIN);
+    ui.sbLogVerbosity->setMaximum(CDL_VERB_MAX);
+
+    QMenu *categoryMenu = new QMenu(this);
+    QMapIterator<int, QString> i(CDL_CAT_STRINGS);
+    while(i.hasNext())
+    {
+        i.next();
+        QAction *a = categoryMenu->addAction(i.value());
+        a->setData(QVariant(i.key()));
+    }
+    ui.tbCategory->setMenu(categoryMenu);
+
+    QMenu *severityMenu = new QMenu(this);
+    i = QMapIterator<int, QString>(CDL_SEV_STRINGS);
+    while(i.hasNext())
+    {
+        i.next();
+        QAction *a = severityMenu->addAction(i.value());
+        a->setData(QVariant(i.key()));
+    }
+    ui.tbSeverity->setMenu(severityMenu);
     emit updateStatusBarMsg();
 }
 
@@ -469,8 +503,10 @@ void MainWindow::faderMoved(int value)
 
 }
 
-void MainWindow::modeButtonPressed()
+void MainWindow::modeButtonPressed(bool checked)
 {
+    if(!checked) return;
+
     QToolButton *button = dynamic_cast<QToolButton *>(sender());
     if(!button) return;
     int index = 0;
@@ -497,6 +533,7 @@ void MainWindow::modeButtonPressed()
         {
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
         }
+        LogModel::log(tr("Switched to Sniffer Mode"), CDL_SEV_INF, 1);
         break;
     case 1: // DMX Sender Mode
         ui.actionSave_File->setEnabled(false);
@@ -509,6 +546,8 @@ void MainWindow::modeButtonPressed()
             m_captureDevice->setMode(ICaptureDevice::TransmitMode);
             m_captureDevice->open();
         }
+
+        LogModel::log(tr("Switched to DMX Transmit Mode"), CDL_SEV_INF, 1);
         break;
     case 2:
         ui.menuCapture->setEnabled(false);
@@ -519,6 +558,7 @@ void MainWindow::modeButtonPressed()
         ui.twRdmController->setCurrentIndex(0);
         // Auto start discovery
         if (m_controller) m_controller->startDiscovery();
+        LogModel::log(tr("Switched to RDM Controller Mode"), CDL_SEV_INF, 1);
         break;
     default:
         break;
@@ -790,7 +830,6 @@ void MainWindow::startFade()
     connect(m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
     fadeAtoB = ui.slCrossfade->value() == 255;
     m_fadeTimer->start(0);
-    qDebug() << "Starting Fade " << m_fadeLength;
 }
 
 void MainWindow::fadeTick()
@@ -1391,7 +1430,6 @@ void MainWindow::timestampDisplayChanged()
 
 void MainWindow::on_actionViewLog_triggered()
 {
-    QListView *view = new QListView();
-    view->setModel(LogModel::getInstance());
-    view->show();
+    if(!ui.dwLogging->isVisible())
+        ui.dwLogging->show();
 }

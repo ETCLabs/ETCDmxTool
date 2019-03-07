@@ -25,7 +25,6 @@
 #include <QTreeWidget>
 #include <QList>
 #include <QLibrary>
-#include <QDebug>
 #include "packetbuffer.h"
 #include "dissectors\dissectorplugin.h"
 
@@ -42,7 +41,6 @@ public:
         DissectorPlugin* dissector;
         bool isEnabled() { return m_enabled; }
         void setEnabled(bool enabled = true) {
-            qDebug() << dissector->getProtocolName() << "Enabled:" << enabled;
             m_enabled = enabled;
         }
 
