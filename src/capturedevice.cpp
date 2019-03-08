@@ -312,7 +312,14 @@ CaptureDeviceList::CaptureDeviceList()
                         .arg(serial)
                         .arg(reinterpret_cast<char*>(version))
                         .arg(port);
-                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER | CAPABILITY_SNIFFER;
+                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER;
+                // Only v1.2 and above can sniff...
+                if (
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.0.") &&
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.1.")
+                    ) {
+                    info.deviceCapabilities |= CAPABILITY_SNIFFER;
+                }
                 m_devList << info;
             }
         }
