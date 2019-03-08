@@ -51,9 +51,6 @@ public:
 
 public slots:
     void readData();
-	void on_actionStart_Capture_toggled(bool checked);
-    void on_actionStop_Capture_triggered();
-    void on_actionRestart_Capture_triggered();
     void on_actionSave_File_triggered();
     void on_actionOpen_File_triggered();
     void on_actionAbout_triggered();
@@ -90,6 +87,11 @@ private slots:
     void setupRawDataEditor(int datatype, int row);
     void composeRawCommand();
     void rawCommandComplete(quint8 response, const QByteArray &data);
+
+private:
+    Q_SIGNAL void updateStatusBarMsg();
+    Q_SLOT void doUpdatetStatusBarMsg();
+
 protected:
     virtual void resizeEvent(QResizeEvent *e);
 private:

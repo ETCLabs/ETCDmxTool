@@ -82,6 +82,7 @@ public:
     RDMSensorValueList getSensorValues(quint32 deviceId);
     void executeCustomCommand(RDM_CmdC *command);
 signals:
+    void discoveryStarted();
     void discoveryFinished();
     void log(const QString &message);
     void gotSensorValues();
