@@ -140,7 +140,6 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     if(gadgetDevice)
     {
         m_controller = new RDMController(gadgetDevice, this);
-        connect(m_controller, SIGNAL(log(QString)), ui.teRdmControlLog, SLOT(appendPlainText(QString)));
         connect(m_controller, &RDMController::discoveryStarted, [this] {
             ui.twRdmDevices->clear();
             ui.rdmProgressBar->setVisible(true);
@@ -222,9 +221,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
 
     ui.tbSniffer->setChecked(true);
 
-    connect(ui.tbController,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
-    connect(ui.tbSniffer,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
-    connect(ui.tbTxMode,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbController,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbSniffer,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbTxMode,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
 
     // Packet table
     // Filtering model
