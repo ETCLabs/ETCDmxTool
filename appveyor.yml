@@ -54,5 +54,5 @@ build_script:
   - nmake
 
 artifacts:
-  - path: install\win\*.exe
+  - path: install\*.exe
   - path: release\*.pdb
