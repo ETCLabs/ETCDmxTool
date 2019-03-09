@@ -55,4 +55,4 @@ build_script:
 
 artifacts:
   - path: install\win\*.exe
-- path: release\*.pdb
+  - path: release\*.pdb
