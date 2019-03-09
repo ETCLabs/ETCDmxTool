@@ -8,7 +8,7 @@ To interface to a DMX/RDM system, it supports two USB devices - the ETC Gadget2 
 
 | Feature              | USB Whip | Gadget2                             |
 |----------------------|----------|-------------------------------------|
-| DMX/RDM Data Capture | Yes      | Yes (Needs Firmware 1.4.0 or above) |
+| DMX/RDM Data Capture | Yes      | Yes (Needs Firmware 1.2.0 or above) |
 | DMX Output           | Yes      | Yes                                 |
 | RDM Controller       | No       | Yes                                 |
 
