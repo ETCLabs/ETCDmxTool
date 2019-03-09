@@ -28,7 +28,7 @@
 #include <QAbstractListModel>
 #include "GadgetDLL.h"
 #include <QMap>
-
+#include <QFile>
 
 static QMap<int, QString> CDL_CAT_STRINGS{
     {CDL_CAT_DBG, "Debug"},
@@ -36,8 +36,7 @@ static QMap<int, QString> CDL_CAT_STRINGS{
     {CDL_CAT_LIB, "Library"},
     {CDL_CAT_SYS, "System"},
     {CDL_CAT_APP, "Application"},
-    {CDL_CAT_UKN, "Unknown"},
-    {CDL_CAT_ALL, "All"}
+    {CDL_CAT_UKN, "Unknown"}
 };
 
 
@@ -45,9 +44,9 @@ static QMap<int, QString> CDL_SEV_STRINGS{
     {CDL_SEV_ERR, "Error"},
     {CDL_SEV_WRN, "Warning"},
     {CDL_SEV_INF, "Information"},
-    {CDL_SEV_UKN, "Unknown"},
-    {CDL_SEV_ALL, "All"}
+    {CDL_SEV_UKN, "Unknown"}
 };
+
 
 
 class LogModel : public QAbstractListModel
@@ -62,13 +61,28 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
     static void log(const QString &message, quint32 severity, int verbosity);
+
+    static QString severityToString(int severity);
+    static QString categoryToString(int category);
+
+    int getSeverityFilter() const;
+    int getCategoryFilter() const;
+    int getVerbosityFilter() const;
+
     void logData(const char* data);
+public slots:
+    void setSeverity(int severity);
+    void setCategoryFilter(int category);
+    void setVerbosityFilter(int value);
+    void saveFile(QFile *file);
 private:
     static LogModel *m_instance;
     explicit LogModel(QObject *parent = nullptr);
+    virtual ~LogModel() override;
     void doLog(const QString &message, quint32 severity, int verbosity);
     QStringList m_logStrings;
-    quint32 m_severity = CDL_SEV_ALL;
+    int m_severity;
+    int m_category;
     int m_verbosity = 5;
 };
 

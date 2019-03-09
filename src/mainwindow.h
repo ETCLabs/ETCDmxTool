@@ -68,6 +68,9 @@ public slots:
     void on_tbRemoveRawCmdData_pressed();
     void on_btnSendCustomRDM_pressed();
     void timestampDisplayChanged();
+    void logCategoryToggle(bool checked);
+    void logSeverityToggle(bool checked);
+    void on_tbSaveLog_pressed();
 private slots:
     void updateFilterString(const QString &filterText);
 	void setFilterColumn(int index);

@@ -33,9 +33,11 @@ int main(int argc, char *argv[])
 {
     qRegisterMetaType<QVector <quint16>>("QVector<quint16>");
 
-
-
 	QApplication a(argc, argv);
+    a.setApplicationName("EtcDmxTool");
+    a.setOrganizationName("ETC Inc");
+    a.setApplicationVersion(VERSION);
+
     QProxyStyle *style = new FancyFaderStyle;
     style->setBaseStyle(QStyleFactory::create("Fusion"));
     a.setStyle(style);

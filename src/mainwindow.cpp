@@ -33,6 +33,7 @@
 #include <QSignalMapper>
 #include <QDateTime>
 #include <QListView>
+#include <QStandardPaths>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -415,6 +416,8 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
 
     ui.sbLogVerbosity->setMinimum(CDL_VERB_MIN);
     ui.sbLogVerbosity->setMaximum(CDL_VERB_MAX);
+    ui.sbLogVerbosity->setValue(LogModel::getInstance()->getVerbosityFilter());
+    connect(ui.sbLogVerbosity, SIGNAL(valueChanged(int)), LogModel::getInstance(), SLOT(setSeverity(int)));
 
     QMenu *categoryMenu = new QMenu(this);
     QMapIterator<int, QString> i(CDL_CAT_STRINGS);
@@ -423,8 +426,12 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         i.next();
         QAction *a = categoryMenu->addAction(i.value());
         a->setData(QVariant(i.key()));
+        a->setCheckable(true);
+        a->setChecked(LogModel::getInstance()->getCategoryFilter() & i.key());
+        connect(a, SIGNAL(toggled(bool)), this, SLOT(logCategoryToggle(bool)));
     }
     ui.tbCategory->setMenu(categoryMenu);
+    ui.tbCategory->setText(LogModel::categoryToString(LogModel::getInstance()->getCategoryFilter()));
 
     QMenu *severityMenu = new QMenu(this);
     i = QMapIterator<int, QString>(CDL_SEV_STRINGS);
@@ -433,8 +440,12 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         i.next();
         QAction *a = severityMenu->addAction(i.value());
         a->setData(QVariant(i.key()));
+        a->setCheckable(true);
+        a->setChecked(LogModel::getInstance()->getSeverityFilter() & i.key());
+        connect(a, SIGNAL(toggled(bool)), this, SLOT(logSeverityToggle(bool)));
     }
     ui.tbSeverity->setMenu(severityMenu);
+    ui.tbSeverity->setText(LogModel::severityToString(LogModel::getInstance()->getSeverityFilter()));
     emit updateStatusBarMsg();
 }
 
@@ -1432,4 +1443,56 @@ void MainWindow::on_actionViewLog_triggered()
 {
     if(!ui.dwLogging->isVisible())
         ui.dwLogging->show();
+}
+
+void MainWindow::logCategoryToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int category = LogModel::getInstance()->getCategoryFilter();
+    if(checked)
+        category = category | a->data().toInt();
+    else
+        category = category & ~(a->data().toInt());
+    LogModel::getInstance()->setCategoryFilter(category);
+
+    ui.tbCategory->setText(LogModel::categoryToString(LogModel::getInstance()->getCategoryFilter()));
+}
+
+void MainWindow::logSeverityToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int severity = LogModel::getInstance()->getSeverityFilter();
+    if(checked)
+        severity = severity | a->data().toInt();
+    else
+        severity = severity & ~(a->data().toInt());
+    LogModel::getInstance()->setSeverity(severity);
+
+    ui.tbSeverity->setText(LogModel::severityToString(LogModel::getInstance()->getSeverityFilter()));
+}
+
+void MainWindow::on_tbSaveLog_pressed()
+{
+    QString filename = QFileDialog::getSaveFileName(this,
+                                 tr("Save Log File"),
+                                 QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                 tr("Text Files (*.txt)"));
+    if(filename.isEmpty())
+        return;
+
+    QFile file(filename);
+    bool ok = file.open(QIODevice::WriteOnly);
+    if(!ok)
+    {
+        QMessageBox::warning(this,
+                             tr("Couldn't Open File"),
+                             tr("Unable to open file %1 to save").arg(filename)
+                             );
+        return;
+    }
+    LogModel::getInstance()->saveFile(&file);
 }
