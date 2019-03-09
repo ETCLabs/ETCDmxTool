@@ -1,4 +1,6 @@
 # ETCDmxTool
+[![Build status](https://ci.appveyor.com/api/projects/status/406b2wcp87ala2o9?svg=true)](https://ci.appveyor.com/project/docsteer/etcdmxtool)
+
 ETCDmxTool is a free, open-source tool with the ability to capture DMX/RDM data; to control DMX levels; and to act as an RDM controller. It is provided by ETC Inc without any warranty, in the hope that it is a useful tool.
 
 # Supported Platforms and DMX Devices
