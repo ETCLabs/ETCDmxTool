@@ -78,6 +78,7 @@ void RDMController::advanceDiscoveryStateMachine()
             Gadget2_StartDiscovery(m_gadget->info().index, m_gadget->info().port);
             QTimer::singleShot(10000, this, SLOT(advanceDiscoveryStateMachine()));
             m_discoveryState = DISC_END_DISCOVERY;
+            emit discoveryStarted();
             return;
     case DISC_END_DISCOVERY:
             // Copy the discovered things to our list

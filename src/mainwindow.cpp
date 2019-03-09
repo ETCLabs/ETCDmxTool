@@ -131,6 +131,13 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     {
         m_controller = new RDMController(gadgetDevice, this);
         connect(m_controller, SIGNAL(log(QString)), ui.teRdmControlLog, SLOT(appendPlainText(QString)));
+        connect(m_controller, &RDMController::discoveryStarted, [this] {
+            ui.twRdmDevices->clear();
+            ui.rdmProgressBar->setVisible(true);
+            ui.rdmProgressBar->setMinimum(0);
+            ui.rdmProgressBar->setMaximum(0);
+            emit updateStatusBarMsg();
+        });
         connect(m_controller, SIGNAL(discoveryFinished()), this, SLOT(gotDiscoveryData()));
         connect(m_controller, SIGNAL(gotSensorValues()), this, SLOT(updateRdmDisplay()));
         connect(m_controller, SIGNAL(customCommandComplete(quint8, QByteArray)), this, SLOT(rawCommandComplete(quint8, QByteArray)));
@@ -146,19 +153,68 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
                                                        this));
         connect(m_captureDevice, SIGNAL(packetsReady()), this, SLOT(readData()));
         connect(m_captureDevice, SIGNAL(discoveryDataReady()), this, SLOT(gotDiscoveryData()));
+
+        // Status Bar
+        connect(this, &MainWindow::updateStatusBarMsg, this, &MainWindow::doUpdatetStatusBarMsg);
+
+        // Capture mode changes
+        ui.actionStart_Capture->setChecked(false);
+        ui.actionStart_Capture->setEnabled(m_captureDevice->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER);
+        ui.actionStop_Capture->setEnabled(false);
+        ui.actionRestart_Capture->setEnabled(false);
+
+        connect(m_captureDevice, &ICaptureDevice::sniffing, [this] {
+            QMetaObject::invokeMethod(this, "setStatusBarMsg");
+            ui.actionStart_Capture->setChecked(true);
+            ui.actionStart_Capture->setEnabled(true);
+            ui.actionStop_Capture->setEnabled(true);
+            ui.actionRestart_Capture->setEnabled(true);
+
+            emit updateStatusBarMsg();
+        });
+
+        connect(m_captureDevice, &ICaptureDevice::closed, [this] {
+            ui.actionStart_Capture->setChecked(false);
+            ui.actionStart_Capture->setEnabled((m_captureDevice->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER));
+            ui.actionStop_Capture->setEnabled(false);
+            ui.actionRestart_Capture->setEnabled(false);
+
+            emit updateStatusBarMsg();
+        });
+
+        connect(m_captureDevice, &ICaptureDevice::transmitting, [this] {
+            ui.actionStart_Capture->setChecked(false);
+            ui.actionStart_Capture->setEnabled(false);
+            ui.actionStop_Capture->setEnabled(false);
+            ui.actionRestart_Capture->setEnabled(false);
+
+            emit updateStatusBarMsg();
+        });
+
+        // Capture mode buttons
+        connect(ui.actionStart_Capture, &QAction::triggered, [this]() {
+            if (m_captureDevice->isOpen() && m_captureDevice->getMode() == ICaptureDevice::SniffMode)
+                stopCapture();
+            else
+                startCapture();
+        });
+        connect(ui.actionStop_Capture, &QAction::triggered, [this]() { stopCapture(); });
+        connect(ui.actionRestart_Capture, &QAction::triggered, [this]() {
+           stopCapture();
+           startCapture();
+        });
     }
     else
     {
         ui.statusBar->addPermanentWidget(new QLabel(tr("Working Offline"), this));
     }
 
-    ui.actionStop_Capture->setEnabled(false);
-	ui.actionRestart_Capture->setEnabled(false);
+
     ui.tbSniffer->setChecked(true);
 
-    connect(ui.tbController,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbSniffer,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbTxMode,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
+    connect(ui.tbController,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
+    connect(ui.tbSniffer,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
+    connect(ui.tbTxMode,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed()));
 
     // Packet table
     // Filtering model
@@ -341,13 +397,44 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     connect(ui.actionSecondsSinceBeginning, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
     connect(ui.actionSecondsSincePrevious, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
 
+    emit updateStatusBarMsg();
 }
 
 MainWindow::~MainWindow()
+{}
+
+void MainWindow::doUpdatetStatusBarMsg()
 {
+    QString statusStr = tr("Unknown");
+    if (m_captureDevice)
+    {
+        if (m_captureDevice->isOpen())
+        {
+            switch (m_captureDevice->getMode())
+            {
+                case ICaptureDevice::SniffMode:
+                    statusStr = tr("Capturing...");
+                    break;
+                case ICaptureDevice::TransmitMode:
+                    statusStr = tr("Transmiter running...");
+                    break;
+                case ICaptureDevice::ControllerMode:
+                    statusStr = tr("Controller running...");
+                    break;
+            }
+        } else {
+            statusStr = tr("Not active");
+        }
+    }
 
+    if (m_controller)
+    {
+        if (ui.stackedWidget->currentIndex() == 2)
+            statusStr = tr("Controller running...");
+    }
+
+    ui.statusBar->showMessage(statusStr);
 }
-
 
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
@@ -393,7 +480,7 @@ void MainWindow::modeButtonPressed()
 
     ui.stackedWidget->setCurrentIndex(index);
 
-
+    stopCapture();
 
     switch(index)
     {
@@ -404,7 +491,6 @@ void MainWindow::modeButtonPressed()
         ui.menuCapture->setEnabled(true);
         if(m_captureDevice)
         {
-            m_captureDevice->close();
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
         }
         break;
@@ -413,10 +499,8 @@ void MainWindow::modeButtonPressed()
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
-        stopCapture();
         if(m_captureDevice)
         {
-            m_captureDevice->close();
             // Start transmitting on entry to screen
             m_captureDevice->setMode(ICaptureDevice::TransmitMode);
             m_captureDevice->open();
@@ -429,14 +513,8 @@ void MainWindow::modeButtonPressed()
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
         ui.twRdmController->setCurrentIndex(0);
-        stopCapture();
-        if(m_captureDevice)
-        {
-            m_captureDevice->close();
-            // Start transmitting on entry to screen
-            m_captureDevice->setMode(ICaptureDevice::ControllerMode);
-            m_captureDevice->open();
-        }
+        // Auto start discovery
+        if (m_controller) m_controller->startDiscovery();
         break;
     default:
         break;
@@ -462,45 +540,16 @@ void MainWindow::readData()
     }
 }
 
-void MainWindow::on_actionStart_Capture_toggled(bool checked)
-{
-	if(checked)
-		startCapture();
-	else
-		stopCapture();
-}
-
-void MainWindow::on_actionStop_Capture_triggered()
-{
-	stopCapture();
-}
-
 void MainWindow::on_actionExit_triggered()
 {
     qApp->quit();
 }
 
-void MainWindow::on_actionRestart_Capture_triggered()
-{
-	stopCapture();
-	startCapture();
-}
-
 void MainWindow::startCapture()
 {
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage("Not Capturing");
-    if(ui.stackedWidget->currentIndex()==1)
-        ui.statusBar->showMessage("Not Transmitting");
-
-
     if(!m_captureDevice)
     {
         QMessageBox::warning(this, tr("Working Offline"), tr("Currently no capture device has been selected. Restart the application to select a device."));
-        ui.actionStart_Capture->setChecked(false);
-        ui.actionStop_Capture->setEnabled(false);
-        ui.actionRestart_Capture->setEnabled(false);
         return;
     }
 
@@ -508,20 +557,8 @@ void MainWindow::startCapture()
     if(!m_captureDevice->open())
     {
         QMessageBox::warning(this, tr("Couldn't Open Device"), tr("Unable to open the selected capture device"));
-        ui.actionStart_Capture->setChecked(false);
-        ui.actionStop_Capture->setEnabled(false);
-        ui.actionRestart_Capture->setEnabled(false);
         return;
     }
-
-
-    ui.actionStop_Capture->setEnabled(true);
-    ui.actionRestart_Capture->setEnabled(true);
-
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage(tr("Capturing from %1").arg(m_captureDevice->description()));
-
 
     m_packetTable.clearAll();
 	
@@ -533,18 +570,8 @@ void MainWindow::startCapture()
 
 void MainWindow::stopCapture()
 {
-    if(m_captureDevice)
-    {
+    if (m_captureDevice)
         m_captureDevice->close();
-    }
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage(tr("Stopped Capturing"));
-    if(ui.stackedWidget->currentIndex()==1)
-        ui.statusBar->showMessage(tr("Stopped Sending"));
-
-	ui.actionStart_Capture->setChecked(false);
-	ui.actionStop_Capture->setEnabled(false);
 }
 
 void MainWindow::updateTreeWidget(int currentRow)
@@ -783,15 +810,6 @@ void MainWindow::fadeTick()
 
 void MainWindow::on_clbDiscoverRdm_pressed()
 {
-    if(!m_captureDevice) return;
-    ui.twRdmDevices->clear();
-
-
-
-    ui.rdmProgressBar->setVisible(true);
-    ui.rdmProgressBar->setMinimum(0);
-    ui.rdmProgressBar->setMaximum(0);
-
     m_controller->startDiscovery();
 }
 

@@ -27,13 +27,15 @@
 #include <QThread>
 #include <QTimer>
 #include <QDebug>
+#include <QString>
 
 /******************************************** ICaptureDevice *****************************/
 
-ICaptureDevice::ICaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info)
+ICaptureDevice::ICaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) :
+    m_mode(SniffMode),
+    m_info(info),
+    m_deviceOpen(false)
 {
-    m_mode = SniffMode;
-    m_info = info;
     memset(m_txLevels, 0,  sizeof(m_txLevels));
 }
 
@@ -64,11 +66,11 @@ void ICaptureDevice::setDmxLevels(quint8 *levels, size_t length)
 
 /************************************** WhipCaptureDevice ********************************/
 
-WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info)
+WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info),
+    m_rxTimer(Q_NULLPTR),
+    m_comm(new FTDComm)
 {
-    m_comm = new FTDComm;
     m_deviceNum = static_cast<int>(info.index);
-    m_rxTimer = Q_NULLPTR;
 }
 
 bool WhipCaptureDevice::open()
@@ -92,12 +94,16 @@ bool WhipCaptureDevice::open()
         m_rxTimer->start(100);
     }
 
+    m_deviceOpen = true;
+    emit sniffing();
     return true;
 }
 
 void WhipCaptureDevice::close()
 {
     m_comm->Close();
+    m_deviceOpen = false;
+    emit closed();
 }
 
 
@@ -188,11 +194,18 @@ void GadgetCaptureDevice::readData()
 
 bool GadgetCaptureDevice::open()
 {
-    if(m_mode==ICaptureDevice::SniffMode)
-        QMetaObject::invokeMethod(this, "startReading");
-    if(m_mode==ICaptureDevice::TransmitMode)
-        QMetaObject::invokeMethod(this, "startSending");
-    return true;
+    switch (m_mode)
+    {
+        case ICaptureDevice::SniffMode:
+            QMetaObject::invokeMethod(this, "startReading");
+            return true;
+        case ICaptureDevice::TransmitMode:
+            QMetaObject::invokeMethod(this, "startSending");
+            return true;
+        case ICaptureDevice::ControllerMode:
+            emit transmitting();
+            return true;
+    }
 }
 
 void GadgetCaptureDevice::startReading()
@@ -202,6 +215,9 @@ void GadgetCaptureDevice::startReading()
     m_rxTimer->setInterval(0);
     connect(m_rxTimer, SIGNAL(timeout()), this, SLOT(readData()));
     m_rxTimer->start();
+
+    m_deviceOpen = true;
+    emit sniffing();
 }
 
 void GadgetCaptureDevice::startSending()
@@ -210,6 +226,9 @@ void GadgetCaptureDevice::startSending()
     m_rxTimer->setInterval(100);
     connect(m_rxTimer, SIGNAL(timeout()), this, SLOT(sendData()));
     m_rxTimer->start();
+
+    m_deviceOpen = true;
+    emit transmitting();
 }
 
 void GadgetCaptureDevice::stopSending()
@@ -221,6 +240,9 @@ void GadgetCaptureDevice::stopSending()
         m_rxTimer = Q_NULLPTR;
     }
     Gadget2_DisableDMX(m_deviceNum, m_port);
+
+    m_deviceOpen = false;
+    emit closed();
 }
 
 void GadgetCaptureDevice::sendData()
@@ -290,7 +312,14 @@ CaptureDeviceList::CaptureDeviceList()
                         .arg(serial)
                         .arg(reinterpret_cast<char*>(version))
                         .arg(port);
-                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER | CAPABILITY_SNIFFER;
+                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER;
+                // Only v1.2 and above can sniff...
+                if (
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.0.") &&
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.1.")
+                    ) {
+                    info.deviceCapabilities |= CAPABILITY_SNIFFER;
+                }
                 m_devList << info;
             }
         }
