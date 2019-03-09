@@ -24,12 +24,11 @@ TEMPLATE = app
 TARGET = EtcDmxTool
 QT += core gui
 
-#   v2.0.0.3    Build with plugin-ized dissectors from Marcus
-#   v2.0.0.4    New version supporting Gadget 1.2.0.8.0.4
+# Extract version from Git tag/description
+GIT_COMMAND = git --git-dir $$shell_quote($$PWD/.git) --work-tree $$shell_quote($$PWD)
+GIT_TAG = $$system($$GIT_COMMAND describe --always --tags)
 
-PRODUCT_VERSION=2.0.0.4
-
-DEFINES += VERSION=\\\"$$PRODUCT_VERSION\\\"
+DEFINES += VERSION=\\\"$$GIT_TAG\\\"
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
