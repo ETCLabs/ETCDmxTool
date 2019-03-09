@@ -47,7 +47,7 @@ public:
 
     struct CaptureDeviceInfo {
         DevType type;
-        unsigned int index;
+        int index;
         QString description;
         unsigned int port;
         int deviceCapabilities;

@@ -118,7 +118,7 @@ void RDMController::advanceDiscoveryStateMachine()
          break;
     case DISC_GET_PERSONALITY_DESC:
         emit log(tr("Finished getting  DEVICE_LABELS, %1 responses").arg(Gadget2_GetNumResponses()));
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK)
@@ -159,7 +159,7 @@ void RDMController::advanceDiscoveryStateMachine()
         QTimer::singleShot(100 * cmdTot, this, SLOT(advanceDiscoveryStateMachine()));
         break;
     case DISC_GET_MANUF_LABEL:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK  && resp->getParameter() == E120_DMX_PERSONALITY_DESCRIPTION)
@@ -183,7 +183,7 @@ void RDMController::advanceDiscoveryStateMachine()
 
             }
         }
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
 
@@ -208,7 +208,7 @@ void RDMController::advanceDiscoveryStateMachine()
         break;
 
     case DISC_GET_SUPPORTED_PARAMETERS:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_MANUFACTURER_LABEL)
@@ -222,7 +222,7 @@ void RDMController::advanceDiscoveryStateMachine()
         }
 
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
         foreach(RdmDeviceInfo *info, m_devices)
@@ -246,7 +246,7 @@ void RDMController::advanceDiscoveryStateMachine()
         break;
     case DISC_GET_SENSOR_DEFINITION:
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SUPPORTED_PARAMETERS)
@@ -273,7 +273,7 @@ void RDMController::advanceDiscoveryStateMachine()
             }
         }
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
         foreach(RdmDeviceInfo *info, m_devices)
@@ -302,7 +302,7 @@ void RDMController::advanceDiscoveryStateMachine()
 
 
     case DISC_IDLE:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SENSOR_DEFINITION)
@@ -414,7 +414,7 @@ void RDMController::fetchSensorValues(RdmDeviceInfo *info)
 
 void RDMController::readSensorValues()
 {
-    for(int i=0; i<Gadget2_GetNumResponses(); i++)
+    for(uint i=0; i<Gadget2_GetNumResponses(); i++)
     {
         RDM_CmdC *resp = Gadget2_GetResponse(i);
         if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SENSOR_VALUE)
@@ -467,7 +467,7 @@ void RDMController::executeCustomCommand(RDM_CmdC *command)
 
 void RDMController::readCustomCommand()
 {
-    for(int i=0; i<Gadget2_GetNumResponses(); i++)
+    for(uint i=0; i<Gadget2_GetNumResponses(); i++)
     {
         RDM_CmdC *resp = Gadget2_GetResponse(i);
         if(resp->getParameter()==m_currentCustomParameter)
