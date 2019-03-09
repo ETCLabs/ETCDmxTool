@@ -21,7 +21,8 @@ image: Visual Studio 2015
 version: '{build}'
 
 environment:
-  - QT_Ver: 5.12.1
+  matrix:
+    - QT_Ver: 5.12.1
   
 # build platform, i.e. x86, x64, Any CPU. This setting is optional.
 platform: x86
