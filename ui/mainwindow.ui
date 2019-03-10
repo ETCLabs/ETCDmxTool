@@ -277,7 +277,7 @@ QToolButton:disabled
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="snifferPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -635,7 +635,10 @@ QProgressBar::chunk
               <string>Crossfade</string>
              </property>
              <property name="popupMode">
-              <enum>QToolButton::MenuButtonPopup</enum>
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonTextOnly</enum>
              </property>
             </widget>
            </item>
@@ -1280,7 +1283,7 @@ QProgressBar::chunk
        <item>
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Log Verbosity</string>
+          <string>Verbosiy</string>
          </property>
         </widget>
        </item>
@@ -1288,22 +1291,15 @@ QProgressBar::chunk
         <widget class="QSpinBox" name="sbLogVerbosity"/>
        </item>
        <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Log Category</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QToolButton" name="tbCategory">
          <property name="text">
-          <string>Foo, Bar, Bas</string>
+          <string>Category</string>
          </property>
          <property name="popupMode">
-          <enum>QToolButton::MenuButtonPopup</enum>
+          <enum>QToolButton::InstantPopup</enum>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextBesideIcon</enum>
+          <enum>Qt::ToolButtonTextOnly</enum>
          </property>
          <property name="arrowType">
           <enum>Qt::NoArrow</enum>
@@ -1311,19 +1307,12 @@ QProgressBar::chunk
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Log Severity</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QToolButton" name="tbSeverity">
          <property name="text">
-          <string>X, Y, Z</string>
+          <string>Severity</string>
          </property>
          <property name="popupMode">
-          <enum>QToolButton::MenuButtonPopup</enum>
+          <enum>QToolButton::InstantPopup</enum>
          </property>
          <property name="toolButtonStyle">
           <enum>Qt::ToolButtonTextOnly</enum>

@@ -172,7 +172,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         ui.actionStop_Capture->setEnabled(false);
         ui.actionRestart_Capture->setEnabled(false);
 
-        connect(m_captureDevice, &ICaptureDevice::sniffing, [this] {
+        connect(m_captureDevice, &ICaptureDevice::sniffing, this, [=] {
             QMetaObject::invokeMethod(this, "setStatusBarMsg");
             ui.actionStart_Capture->setChecked(true);
             ui.actionStart_Capture->setEnabled(true);
@@ -180,25 +180,28 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
             ui.actionRestart_Capture->setEnabled(true);
 
             emit updateStatusBarMsg();
-        });
+        },
+        Qt::QueuedConnection);
 
-        connect(m_captureDevice, &ICaptureDevice::closed, [this] {
+        connect(m_captureDevice, &ICaptureDevice::closed, this, [=] {
             ui.actionStart_Capture->setChecked(false);
             ui.actionStart_Capture->setEnabled((m_captureDevice->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER));
             ui.actionStop_Capture->setEnabled(false);
             ui.actionRestart_Capture->setEnabled(false);
 
             emit updateStatusBarMsg();
-        });
+        },
+        Qt::QueuedConnection);
 
-        connect(m_captureDevice, &ICaptureDevice::transmitting, [this] {
+        connect(m_captureDevice, &ICaptureDevice::transmitting, this, [=] {
             ui.actionStart_Capture->setChecked(false);
             ui.actionStart_Capture->setEnabled(false);
             ui.actionStop_Capture->setEnabled(false);
             ui.actionRestart_Capture->setEnabled(false);
 
             emit updateStatusBarMsg();
-        });
+        },
+        Qt::QueuedConnection);
 
         // Capture mode buttons
         connect(ui.actionStart_Capture, &QAction::triggered, [this]() {
@@ -416,7 +419,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     ui.sbLogVerbosity->setMinimum(CDL_VERB_MIN);
     ui.sbLogVerbosity->setMaximum(CDL_VERB_MAX);
     ui.sbLogVerbosity->setValue(LogModel::getInstance()->getVerbosityFilter());
-    connect(ui.sbLogVerbosity, SIGNAL(valueChanged(int)), LogModel::getInstance(), SLOT(setSeverity(int)));
+    connect(ui.sbLogVerbosity, SIGNAL(valueChanged(int)), LogModel::getInstance(), SLOT(setVerbosityFilter(int)));
 
     QMenu *categoryMenu = new QMenu(this);
     QMapIterator<int, QString> i(CDL_CAT_STRINGS);
@@ -430,7 +433,6 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         connect(a, SIGNAL(toggled(bool)), this, SLOT(logCategoryToggle(bool)));
     }
     ui.tbCategory->setMenu(categoryMenu);
-    ui.tbCategory->setText(LogModel::categoryToString(LogModel::getInstance()->getCategoryFilter()));
 
     QMenu *severityMenu = new QMenu(this);
     i = QMapIterator<int, QString>(CDL_SEV_STRINGS);
@@ -444,7 +446,6 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         connect(a, SIGNAL(toggled(bool)), this, SLOT(logSeverityToggle(bool)));
     }
     ui.tbSeverity->setMenu(severityMenu);
-    ui.tbSeverity->setText(LogModel::severityToString(LogModel::getInstance()->getSeverityFilter()));
     emit updateStatusBarMsg();
 }
 
@@ -1455,8 +1456,6 @@ void MainWindow::logCategoryToggle(bool checked)
     else
         category = category & ~(a->data().toInt());
     LogModel::getInstance()->setCategoryFilter(category);
-
-    ui.tbCategory->setText(LogModel::categoryToString(LogModel::getInstance()->getCategoryFilter()));
 }
 
 void MainWindow::logSeverityToggle(bool checked)
@@ -1470,8 +1469,6 @@ void MainWindow::logSeverityToggle(bool checked)
     else
         severity = severity & ~(a->data().toInt());
     LogModel::getInstance()->setSeverity(severity);
-
-    ui.tbSeverity->setText(LogModel::severityToString(LogModel::getInstance()->getSeverityFilter()));
 }
 
 void MainWindow::on_tbSaveLog_pressed()
