@@ -211,6 +211,7 @@ bool GadgetCaptureDevice::open()
             emit transmitting();
             return true;
     }
+    return false;
 }
 
 void GadgetCaptureDevice::startReading()

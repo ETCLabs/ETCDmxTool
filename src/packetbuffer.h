@@ -38,7 +38,7 @@ public:
 	Packet(const QByteArray &data);
     Packet(const Packet &other, int start = 0);
 
-    quint64 timestamp;
+    qint64 timestamp;
     bool isRdmCollision;
     unsigned char operator[] ( int i ) const;
 };

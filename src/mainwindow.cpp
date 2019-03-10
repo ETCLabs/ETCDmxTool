@@ -90,7 +90,7 @@ QString prettifyHex(const QByteArray &data)
         QString text = QString("%1 ").arg(line, 4, 16, QChar('0')).toUpper();
         for(int i=0; i<16; i++)
             if(line+i<data.length())
-                text.append(QString(" %1").arg((unsigned char) data[line+i], 2, 16, QChar('0')).toUpper());
+                text.append(QString(" %1").arg(static_cast<unsigned char>( data[line+i]), 2, 16, QChar('0')).toUpper());
 
         // Fill out the last line
         if(text.length() < 52)
@@ -225,8 +225,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     ui.tbSniffer->setChecked(true);
 
     connect(ui.tbController,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
-    connect(ui.tbSniffer,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
-    connect(ui.tbTxMode,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbSniffer,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbTxMode,        SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbDmxView,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
 
     // Packet table
     // Filtering model
@@ -367,6 +368,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     btnGroup->addButton(ui.tbController);
     btnGroup->addButton(ui.tbSniffer);
     btnGroup->addButton(ui.tbTxMode);
+    btnGroup->addButton(ui.tbDmxView);
     btnGroup->setExclusive(true);
 
     // Setup Custom PID
@@ -502,12 +504,12 @@ void MainWindow::faderMoved(int value)
     if((index = m_scene1sliders.indexOf(slider)) > -1)
     {
         scene = 1;
-        m_scene1Levels[index + ui.sbDmxStart->value() - 1] = value;
+        m_scene1Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
     if((index = m_scene2sliders.indexOf(slider)) > -1)
     {
         scene = 2;
-        m_scene2Levels[index + ui.sbDmxStart->value() - 1] = value;
+        m_scene2Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
 
     updateTxLevels();
@@ -520,22 +522,23 @@ void MainWindow::modeButtonPressed(bool checked)
 
     QToolButton *button = dynamic_cast<QToolButton *>(sender());
     if(!button) return;
-    int index = 0;
 
     if(button==ui.tbSniffer)
-        index = 0;
+        m_mode = OPMODE_SNIFFER;
     if(button == ui.tbTxMode)
-        index = 1;
+        m_mode = OPMODE_DMXCONTROL;
     if(button == ui.tbController)
-        index = 2;
+        m_mode = OPMODE_RDMCONTROL;
+    if(button == ui.tbDmxView)
+        m_mode = OPMODE_DMXVIEW;
 
-    ui.stackedWidget->setCurrentIndex(index);
+    ui.stackedWidget->setCurrentIndex(m_mode);
 
     stopCapture();
 
-    switch(index)
+    switch(m_mode)
     {
-    case 0: // Sniffer mode
+    case OPMODE_SNIFFER: // Sniffer mode
         ui.actionSave_File->setEnabled(true);
         ui.actionOpen_File->setEnabled(true);
         ui.actionExport_to_PcapNg->setEnabled(true);
@@ -546,7 +549,7 @@ void MainWindow::modeButtonPressed(bool checked)
         }
         LogModel::log(tr("Switched to Sniffer Mode"), CDL_SEV_INF, 1);
         break;
-    case 1: // DMX Sender Mode
+    case OPMODE_DMXCONTROL: // DMX Sender Mode
         ui.actionSave_File->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
@@ -560,7 +563,7 @@ void MainWindow::modeButtonPressed(bool checked)
 
         LogModel::log(tr("Switched to DMX Transmit Mode"), CDL_SEV_INF, 1);
         break;
-    case 2:
+    case OPMODE_RDMCONTROL: // RDM Controller Mode
         ui.menuCapture->setEnabled(false);
         ui.actionSave_File->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
@@ -571,7 +574,16 @@ void MainWindow::modeButtonPressed(bool checked)
         if (m_controller) m_controller->startDiscovery();
         LogModel::log(tr("Switched to RDM Controller Mode"), CDL_SEV_INF, 1);
         break;
-    default:
+    case OPMODE_DMXVIEW: // DMX View Mode
+        ui.menuCapture->setEnabled(false);
+        ui.actionSave_File->setEnabled(false);
+        ui.actionOpen_File->setEnabled(false);
+        ui.actionExport_to_PcapNg->setEnabled(false);
+        ui.menuCapture->setEnabled(false);
+        if(m_captureDevice)
+        {
+            m_captureDevice->setMode(ICaptureDevice::SniffMode);
+        }
         break;
     }
 
@@ -580,7 +592,7 @@ void MainWindow::modeButtonPressed(bool checked)
 
 void MainWindow::readData()
 {
-    if(m_captureDevice)
+    if(m_captureDevice && m_mode==OPMODE_SNIFFER)
     {
         QList<Packet> packets = m_captureDevice->getPackets();
         foreach(Packet p, packets)
@@ -590,8 +602,20 @@ void MainWindow::readData()
                 m_packetTable.appendPacket(p);
             }
         }
-
         ui.tableView->scrollToBottom();
+    }
+
+    if(m_captureDevice && m_mode==OPMODE_DMXVIEW)
+    {
+        QList<Packet> packets = m_captureDevice->getPackets();
+        Packet p = packets.last();
+        if(p.length()>0)
+        {
+            char startcode = p.at(0);
+            if(startcode != 0) return;
+            for(int i=1; i<p.length(); i++)
+                ui.dmxGridWidget->setCellValue(i-1, QString::number(p.at(i)));
+        }
     }
 }
 
@@ -674,7 +698,7 @@ void MainWindow::on_actionSave_File_triggered()
         stream << packet.timestamp << " ";
         for(int i=0; i<packet.length(); i++)
         {
-            stream << QString("%1").arg((unsigned char)packet.at(i), 2, 16, QChar('0'));
+            stream << QString("%1").arg(packet.at(i), 2, 16, QChar('0'));
             stream << " ";
         }
         stream << "\r\n";

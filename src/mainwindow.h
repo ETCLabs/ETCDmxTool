@@ -131,6 +131,15 @@ private:
         RDMSENSORCOLCOUNT
     };
 
+    // Should correspond to the stacked widget indices
+    enum OperationMode
+    {
+        OPMODE_SNIFFER = 0,
+        OPMODE_DMXCONTROL,
+        OPMODE_RDMCONTROL,
+        OPMODE_DMXVIEW
+    };
+
     Ui::MainWindowClass ui;
 
     bool m_firstPacket;
@@ -180,6 +189,7 @@ private:
     QComboBox *m_commandCombo;
     QComboBox *m_paramCombo;
     QSpinBox *m_subDeviceSpin;
+    OperationMode m_mode;
 };
 
 #endif // MAINWINDOW_H
