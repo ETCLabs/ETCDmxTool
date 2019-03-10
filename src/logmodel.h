@@ -55,31 +55,43 @@ class LogModel : public QAbstractListModel
 
 public:
     static LogModel *getInstance();
-    // Basic functionality:
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    // QAbstractListModel
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    static void log(const QString &message, quint32 severity, int verbosity);
 
+    // Utility Functions
     static QString severityToString(int severity);
     static QString categoryToString(int category);
 
+    // Filtering Functions
     int getSeverityFilter() const;
     int getCategoryFilter() const;
     int getVerbosityFilter() const;
 
-    void logData(const char* data);
+    // Logging Function
+    // These *are* threadsafe - can be called from any thread
+    static void log(const QString &message, quint32 severity, int verbosity);
+
 public slots:
+
+    // Logging Function
+    void logWithoutFilter(const QString &string);
+
+    // Filtering Functions
     void setSeverity(int severity);
     void setCategoryFilter(int category);
     void setVerbosityFilter(int value);
+
+    // Save to file
     void saveFile(QFile *file);
+private slots:
+    void doLog(const QString &message, quint32 severity, int verbosity);
 private:
     static LogModel *m_instance;
     explicit LogModel(QObject *parent = nullptr);
     virtual ~LogModel() override;
-    void doLog(const QString &message, quint32 severity, int verbosity);
     QStringList m_logStrings;
     int m_severity;
     int m_category;

@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QSettings>
 #include <QTextStream>
+#include <QThread>
 
 LogModel *LogModel::getInstance()
 {
@@ -48,21 +49,42 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-void LogModel::logData(const char *data)
+void LogModel::logWithoutFilter(const QString &string)
 {
-    emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
-    m_logStrings <<  QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + QString::fromLatin1(data);
-    emit endInsertRows();
+    if(this->thread()==QThread::currentThread())
+    {
+        emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
+        m_logStrings <<  QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + string;
+        emit endInsertRows();
+    }
+    else {
+        QMetaObject::invokeMethod(this,
+                                  "logWithoutFilter",
+                                  Q_ARG(QString, string)
+                                 );
+    }
 }
 
 void LogModel::doLog(const QString &message, quint32 severity, int verbosity)
 {
-    if(severity<=m_severity && verbosity<=m_verbosity)
+    if(this->thread()==QThread::currentThread())
     {
-        emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
-        QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
-        m_logStrings << data;
-        emit endInsertRows();
+        if(severity<=m_severity && verbosity<=m_verbosity)
+        {
+            emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
+            QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
+            m_logStrings << data;
+            emit endInsertRows();
+        }
+    }
+    else {
+        QMetaObject::invokeMethod(this,
+                                  "doLog",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QString, message),
+                                  Q_ARG(quint32, severity),
+                                  Q_ARG(int, verbosity)
+                                  );
     }
 }
 
@@ -73,7 +95,7 @@ void LogModel::log(const QString &message, quint32 severity, int verbosity)
 
 void __stdcall GadgetLogCallback(const char* logData)
 {
-    LogModel::getInstance()->logData(logData);
+    LogModel::getInstance()->logWithoutFilter(QString(logData));
 }
 
 QString LogModel::severityToString(int severity)
