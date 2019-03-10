@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Ftd2xx.h"
+#include "ftd2xx.h"
 
 #include <QList>
 #include <QString>
