@@ -24,7 +24,6 @@
 #include "util.h"
 #include <QList>
 #include <QTreeWidgetItem>
-#include <QDebug>
 
 #include "rdmdissector.h"
 

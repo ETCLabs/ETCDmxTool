@@ -26,8 +26,7 @@
 
 #include <QThread>
 #include <QTimer>
-#include <QDebug>
-#include <QString>
+#include "logmodel.h"
 
 /******************************************** ICaptureDevice *****************************/
 
@@ -76,7 +75,9 @@ WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo 
 bool WhipCaptureDevice::open()
 {
     FTDCommError Result = m_comm->Open(m_deviceNum);
-    qDebug() << "Opening device " << m_deviceNum;
+    LogModel::log(QString("Opening USB whip device %1").arg(m_deviceNum),
+                  CDL_SEV_INF,
+                  1);
 
     if(Result != FTDCOMM_OK)
         return false;
@@ -85,7 +86,9 @@ bool WhipCaptureDevice::open()
     if(Result != FTDCOMM_OK)
         return false;
 
-    qDebug() << "Starting Whip RX Timer, devnum" << m_deviceNum;
+    LogModel::log(QString("Starting Whip RX Timer for device %1").arg(m_deviceNum),
+                  CDL_SEV_INF,
+                  1);
 
     if(!m_rxTimer)
     {
@@ -171,7 +174,9 @@ void GadgetCaptureDevice::readData()
     {
         quint16* buffer = new quint16[numBytes];
         Gadget2_GetRXRawBytes(m_deviceNum, m_port, buffer, numBytes);
-        qDebug() << "Got " << numBytes << " bytes";
+        LogModel::log(QString("Gadget received %1 bytes").arg(numBytes),
+                      CDL_SEV_INF,
+                      1);
 
         for(unsigned int i = 0; i < numBytes; ++i)
         {

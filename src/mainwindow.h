@@ -55,9 +55,10 @@ public slots:
     void on_actionOpen_File_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
+    void on_actionViewLog_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
-    void modeButtonPressed();
+    void modeButtonPressed(bool checked);
     void on_twRdmDevices_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_tbDmxStartPrev_pressed();
     void on_tbDmxStartNext_pressed();
@@ -67,6 +68,9 @@ public slots:
     void on_tbRemoveRawCmdData_pressed();
     void on_btnSendCustomRDM_pressed();
     void timestampDisplayChanged();
+    void logCategoryToggle(bool checked);
+    void logSeverityToggle(bool checked);
+    void on_tbSaveLog_pressed();
 private slots:
     void updateFilterString(const QString &filterText);
 	void setFilterColumn(int index);

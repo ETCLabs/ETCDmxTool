@@ -21,7 +21,6 @@
 #include "FTDComm.h"
 #include <QString>
 #include <QFile>
-#include <qdebug.h>
 
 FTDComm::FTDComm(void)
 {
