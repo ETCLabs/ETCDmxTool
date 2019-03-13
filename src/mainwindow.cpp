@@ -43,6 +43,7 @@
 #include "capturedevice.h"
 #include "customdataroles.h"
 #include "levelindicator.h"
+#include "updatedialog.h"
 
 // PcapNg Export
 #include "pcap/pcapng.h"
@@ -156,6 +157,8 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         ui.tbController->setEnabled(false);
     }
 
+    ui.actionUpdateGadget->setEnabled(gadgetDevice!=Q_NULLPTR);
+
     if(m_captureDevice)
     {
         ui.statusBar->addPermanentWidget(new QLabel(tr("Using device %1").arg(m_captureDevice->description()),
@@ -173,7 +176,6 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         ui.actionRestart_Capture->setEnabled(false);
 
         connect(m_captureDevice, &ICaptureDevice::sniffing, this, [=] {
-            QMetaObject::invokeMethod(this, "setStatusBarMsg");
             ui.actionStart_Capture->setChecked(true);
             ui.actionStart_Capture->setEnabled(true);
             ui.actionStop_Capture->setEnabled(true);
@@ -583,6 +585,7 @@ void MainWindow::modeButtonPressed(bool checked)
         if(m_captureDevice)
         {
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
+            m_captureDevice->open();
         }
         break;
     }
@@ -608,13 +611,16 @@ void MainWindow::readData()
     if(m_captureDevice && m_mode==OPMODE_DMXVIEW)
     {
         QList<Packet> packets = m_captureDevice->getPackets();
+        if(packets.length()==0) return;
         Packet p = packets.last();
         if(p.length()>0)
         {
             char startcode = p.at(0);
             if(startcode != 0) return;
-            for(int i=1; i<p.length(); i++)
-                ui.dmxGridWidget->setCellValue(i-1, QString::number(p.at(i)));
+            int packetLength = qMin(p.length(), 513); // Deal with occasional wrong packet lengths from Gadget2
+            for(int i=1; i<packetLength; i++)
+                ui.dmxGridWidget->setCellValue(i-1, QString::number(static_cast<unsigned char>(p.at(i))));
+            ui.dmxGridWidget->update();
         }
     }
 }
@@ -1467,6 +1473,31 @@ void MainWindow::on_actionViewLog_triggered()
 {
     if(!ui.dwLogging->isVisible())
         ui.dwLogging->show();
+}
+
+void MainWindow::on_actionUpdateGadget_triggered()
+{
+    QString defaultPath;
+    QStringList desktopLoc = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation);
+    if(desktopLoc.count()>0) defaultPath = desktopLoc.first();
+
+    if(QDir("C:/etc/nodesbin").exists())
+        defaultPath = "C:/etc/nodesbin";
+
+    QString firmwareFile = QFileDialog::getOpenFileName(this, tr("Select Gadget Firmware"), defaultPath);
+    if(firmwareFile.isEmpty())
+        return;
+    if(!m_captureDevice) return;
+    GadgetCaptureDevice *d = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
+    if(!d) return;
+
+    UpdateDialog dialog(this);
+    connect(d, SIGNAL(updateProgressText(QString)), &dialog, SLOT(setStatusText(QString)));
+    connect(d, SIGNAL(updateComplete()), &dialog, SLOT(doneAndRestart()));
+
+    d->updateFirmware(firmwareFile);
+
+    dialog.exec();
 }
 
 void MainWindow::logCategoryToggle(bool checked)
