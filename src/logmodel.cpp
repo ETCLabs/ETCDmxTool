@@ -67,6 +67,9 @@ void LogModel::logWithoutFilter(const QString &string)
 
 void LogModel::doLog(const QString &message, quint32 severity, int verbosity)
 {
+    if(severity>=m_severity && verbosity>=m_verbosity)
+        return;
+
     if(this->thread()==QThread::currentThread())
     {
         if(severity<=m_severity && verbosity<=m_verbosity)
