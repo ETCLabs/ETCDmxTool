@@ -1247,7 +1247,11 @@ QProgressBar::chunk
     <addaction name="actionSave_File"/>
     <addaction name="actionOpen_File"/>
     <addaction name="actionExport_to_PcapNg"/>
+    <addaction name="separator"/>
     <addaction name="actionViewLog"/>
+    <addaction name="separator"/>
+    <addaction name="actionUpdateGadget"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuCapture">
@@ -1495,6 +1499,11 @@ QProgressBar::chunk
   <action name="actionViewLog">
    <property name="text">
     <string>View Log...</string>
+   </property>
+  </action>
+  <action name="actionUpdateGadget">
+   <property name="text">
+    <string>Update Gadget2...</string>
    </property>
   </action>
  </widget>
