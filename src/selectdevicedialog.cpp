@@ -26,6 +26,7 @@ SelectDeviceDialog::SelectDeviceDialog(QWidget *parent ) :
     QDialog(parent),
     m_devList(Q_NULLPTR)
 {
+    setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 	m_dialog.setupUi(this);
     m_dialog.okButton->setEnabled(false);
     refreshDeviceList();
