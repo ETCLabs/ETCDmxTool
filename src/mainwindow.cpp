@@ -34,6 +34,7 @@
 #include <QDateTime>
 #include <QListView>
 #include <QStandardPaths>
+#include <QDirIterator>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -1481,8 +1482,20 @@ void MainWindow::on_actionUpdateGadget_triggered()
     QStringList desktopLoc = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation);
     if(desktopLoc.count()>0) defaultPath = desktopLoc.first();
 
+    // Look in the default location, C:\etc\nodesbin
     if(QDir("C:/etc/nodesbin").exists())
+    {
         defaultPath = "C:/etc/nodesbin";
+        QStringList filter;
+        filter << "*Gadget_II*";
+        QDirIterator it(defaultPath, filter, QDir::AllEntries | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        QStringList files;
+        while (it.hasNext())
+            files << it.next();
+        files.sort();
+        if(files.count()>0)
+            defaultPath = files.last();
+    }
 
     QString firmwareFile = QFileDialog::getOpenFileName(this, tr("Select Gadget Firmware"), defaultPath);
     if(firmwareFile.isEmpty())
