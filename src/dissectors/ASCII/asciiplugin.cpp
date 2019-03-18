@@ -26,6 +26,15 @@
 #include <QTreeWidgetItem>
 #include <QString>
 
+enum slotIdx
+{
+    idxStartCode = 0,
+    idxPage = 1,
+    idxCharLines = 2,
+    idxText = 3,
+    idxMinLength = idxText
+};
+
 QVariant ASCIIPlugin::getProtocolName()
 {
     return "E1.11-2008 ASCII Text Packet";
@@ -55,7 +64,7 @@ QVariant ASCIIPlugin::getInfo(const Packet &p)
     switch (static_cast<quint8>(p.at(0)))
     {
         case E110_SC::ASCII_TEXT:
-            return QString::fromLatin1(p.data() + 1, p.size() - 1);
+            return QString::fromLatin1(p.data() + idxText, p.size() - idxText);
 
         default:
             return tr("Unknown");
@@ -75,7 +84,7 @@ void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
     parent->setText(0, getProtocolName().toString());
     Util::setPacketByteHighlight(parent, 0, p.size());
 
-    if (p.size() < 3)
+    if (p.size() < idxMinLength)
     {
         QTreeWidgetItem *i = new QTreeWidgetItem();
         i->setText(0, "Too Short");
@@ -87,7 +96,7 @@ void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 
     i = new QTreeWidgetItem();
     i->setText(0, QObject::tr("Start Code"));
-    switch (static_cast<quint8>(p.at(0)))
+    switch (static_cast<quint8>(p.at(idxStartCode)))
     {
         case E110_SC::ASCII_TEXT:
             i->setText(1, QObject::tr("ASCII Text Packet"));
@@ -98,13 +107,13 @@ void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
             break;
 
     }
-    Util::setPacketByteHighlight(i, 0, 1);
+    Util::setPacketByteHighlight(i, idxStartCode, 1);
     parent->addChild(i);
 
     i = new QTreeWidgetItem();
     i->setText(0, QObject::tr("Page"));
-    i->setText(1, QString::number(p.at(1)));
-    Util::setPacketByteHighlight(i, 1, 1);
+    i->setText(1, QString::number(p.at(idxPage)));
+    Util::setPacketByteHighlight(i, idxPage, 1);
     parent->addChild(i);
 
     i = new QTreeWidgetItem();
@@ -112,24 +121,24 @@ void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
     if (p.at(2) == 0)
         i->setText(1, QObject::tr(("Ignore")));
     else
-        i->setText(1, QString::number(p.at(2)));
-    Util::setPacketByteHighlight(i, 2, 1);
+        i->setText(1, QString::number(p.at(idxCharLines)));
+    Util::setPacketByteHighlight(i, idxCharLines, 1);
     parent->addChild(i);
 
     i = new QTreeWidgetItem();
     i->setText(0, QObject::tr("String"));
     QString strValue = "";
-    switch (static_cast<quint8>(p.at(0)))
+    switch (static_cast<quint8>(p.at(idxStartCode)))
     {
         case E110_SC::ASCII_TEXT:
-            strValue = QString::fromLatin1(p.data() + 3, p.size() - 1);
+            strValue = QString::fromLatin1(p.data() + idxText, p.size() - idxText);
             break;
 
         default:
             break;
     }
     i->setText(1, strValue);
-    Util::setPacketByteHighlight(i, 3, std::min(strValue.length(), p.size() - 1));
+    Util::setPacketByteHighlight(i, 3, std::min(strValue.length(), p.size() - idxText));
     parent->addChild(i);
 }
 
