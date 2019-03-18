@@ -21,7 +21,6 @@
 #include "RDMDissector.h"
 
 #include <QTreeWidgetItem>
-#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>

@@ -25,7 +25,6 @@
 #include "rdm/estardm.h"
 #include "util.h"
 #include <QTimer>
-#include <QDebug>
 
 quint16 rdm_unpack_u16(const void *data, int index)
 {
@@ -73,23 +72,25 @@ void RDMController::advanceDiscoveryStateMachine()
     switch(m_discoveryState)
     {
     case DISC_START_DISCOVERY:
-            emit log("Beginning RDM Discovery..");
-            emit log("Waiting 10s for device discovery");
+            LogModel::log("Beginning RDM Discovery..", CDL_SEV_INF, 1);
+            LogModel::log("Waiting 10s for device discovery", CDL_SEV_INF, 1);
             Gadget2_StartDiscovery(m_gadget->info().index, m_gadget->info().port);
             QTimer::singleShot(10000, this, SLOT(advanceDiscoveryStateMachine()));
             m_discoveryState = DISC_END_DISCOVERY;
+            emit discoveryStarted();
             return;
     case DISC_END_DISCOVERY:
             // Copy the discovered things to our list
-            emit log("Finished Discovery");
-            emit log(tr("Discovered %1 Devices").arg(Gadget2_GetDiscoveredDevices()));
-            for(unsigned int i = 0; i < Gadget2_GetDiscoveredDevices(); i++)
+            LogModel::log("Finished Discovery", CDL_SEV_INF, 1);
+            LogModel::log(tr("Discovered %1 Devices").arg(Gadget2_GetDiscoveredDevices()), CDL_SEV_INF, 1);
+            for(int i=0; i<Gadget2_GetDiscoveredDevices(); i++)
             {
                 RdmDeviceInfo *info = Gadget2_GetDeviceInfo(i);
                 m_devices << info;
-                emit log(tr("Device %1 at index %2")
+                LogModel::log(tr("Device %1 at index %2")
                          .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id))
-                         .arg(i));
+                         .arg(i),
+                              CDL_SEV_INF, 1);
             }
             m_currentDevice = 0;
             m_discoveryState = DISC_GET_NAME;
@@ -99,8 +100,9 @@ void RDMController::advanceDiscoveryStateMachine()
         foreach(RdmDeviceInfo *info, m_devices)
         {
 
-            emit log(tr("Request DEVICE_LABEL for %1")
-                     .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)));
+            LogModel::log(tr("Request DEVICE_LABEL for %1")
+                     .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)),
+                           CDL_SEV_INF, 1);
             Gadget2_SendRDMCommand(m_gadget->info().index,
                                m_gadget->info().port,
                                E120_GET_COMMAND,
@@ -116,17 +118,21 @@ void RDMController::advanceDiscoveryStateMachine()
          QTimer::singleShot(1000 * m_devices.count(), this, SLOT(advanceDiscoveryStateMachine()));
          break;
     case DISC_GET_PERSONALITY_DESC:
-        emit log(tr("Finished getting  DEVICE_LABELS, %1 responses").arg(Gadget2_GetNumResponses()));
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+         LogModel::log(tr("Finished getting  DEVICE_LABELS, %1 responses").arg(Gadget2_GetNumResponses()),
+                       CDL_SEV_INF,
+                       1);
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK)
             {
                 QString label = QString::fromLatin1(static_cast<const char*>(resp->getBuffer()), resp->getLength());
                 m_deviceLabels[resp->getDeviceId()] = label;
-                emit log(tr("%1 : DEVICE_LABEL is %2")
+                LogModel::log(tr("%1 : DEVICE_LABEL is %2")
                          .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
-                         .arg(label));
+                         .arg(label),
+                              CDL_SEV_INF,
+                              1);
             }
             Gadget2_ClearResponse(i);
         }
@@ -138,9 +144,11 @@ void RDMController::advanceDiscoveryStateMachine()
             for(quint8 pers_index=1; pers_index<=(info->dmx_personality & 0x00FF); pers_index++)
             {
 
-                emit log(tr("Request DMX_PERSONALITY_DESCRIPTION for %1, personality %2")
+                 LogModel::log(tr("Request DMX_PERSONALITY_DESCRIPTION for %1, personality %2")
                          .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id))
-                         .arg(pers_index));
+                         .arg(pers_index),
+                               CDL_SEV_INF,
+                               1);
                 cmdTot++;
                 Gadget2_SendRDMCommand(m_gadget->info().index,
                                    m_gadget->info().port,
@@ -158,7 +166,7 @@ void RDMController::advanceDiscoveryStateMachine()
         QTimer::singleShot(100 * cmdTot, this, SLOT(advanceDiscoveryStateMachine()));
         break;
     case DISC_GET_MANUF_LABEL:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK  && resp->getParameter() == E120_DMX_PERSONALITY_DESCRIPTION)
@@ -174,22 +182,26 @@ void RDMController::advanceDiscoveryStateMachine()
                 m_personalityLists[resp->getDeviceId()].setPersonalityFootprint(pers_index, pers_footprint);
                 m_personalityLists[resp->getDeviceId()].setPersonalityName(pers_index, pers_name);
 
-                emit log(tr("%1 : Got Personality Info for personality %2 : Name %3, Footprint %4")
+                 LogModel::log(tr("%1 : Got Personality Info for personality %2 : Name %3, Footprint %4")
                          .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
                          .arg(pers_index)
                          .arg(pers_name)
-                         .arg(pers_footprint));
+                         .arg(pers_footprint),
+                               CDL_SEV_INF,
+                               1);
 
             }
         }
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
 
         foreach(RdmDeviceInfo *info, m_devices)
         {
-            emit log(tr("Request MANUFACTURER_LABEL for %1")
-                         .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)));
+             LogModel::log(tr("Request MANUFACTURER_LABEL for %1")
+                         .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)),
+                           CDL_SEV_INF,
+                           1);
             Gadget2_SendRDMCommand(m_gadget->info().index,
                                m_gadget->info().port,
                                E120_GET_COMMAND,
@@ -207,27 +219,31 @@ void RDMController::advanceDiscoveryStateMachine()
         break;
 
     case DISC_GET_SUPPORTED_PARAMETERS:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_MANUFACTURER_LABEL)
             {
                 QString label = QString::fromLatin1(static_cast<const char*>(resp->getBuffer()), resp->getLength());
                 m_manufacturerLabels[resp->getDeviceId()] = label;
-                emit log(tr("%1 : MANUFACTURER_LABEL is %2")
+                LogModel::log(tr("%1 : MANUFACTURER_LABEL is %2")
                          .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
-                         .arg(label));
+                         .arg(label),
+                              CDL_SEV_INF,
+                              1);
             }
         }
 
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
         foreach(RdmDeviceInfo *info, m_devices)
         {
-            emit log(tr("Request SUPPORTED_PARAMETERS for %1")
-                         .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)));
+             LogModel::log(tr("Request SUPPORTED_PARAMETERS for %1")
+                         .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id)),
+                           CDL_SEV_INF,
+                           1);
             Gadget2_SendRDMCommand(m_gadget->info().index,
                                m_gadget->info().port,
                                E120_GET_COMMAND,
@@ -245,7 +261,7 @@ void RDMController::advanceDiscoveryStateMachine()
         break;
     case DISC_GET_SENSOR_DEFINITION:
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SUPPORTED_PARAMETERS)
@@ -264,24 +280,28 @@ void RDMController::advanceDiscoveryStateMachine()
                     supportedParamValues << value;
                 }
 
-                emit log(tr("%1 : SUPPORTED_PARAMETERS are %2")
+                 LogModel::log(tr("%1 : SUPPORTED_PARAMETERS are %2")
                          .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
-                         .arg(supportedParams));
+                         .arg(supportedParams),
+                               CDL_SEV_INF,
+                               1);
 
                 m_supportedParams[resp->getDeviceId()] = supportedParamValues;
             }
         }
 
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
             Gadget2_ClearResponse(i);
 
         foreach(RdmDeviceInfo *info, m_devices)
         {
             for(quint8 sensor=0; sensor<info->sensor_count; sensor++)
             {
-                emit log(tr("Request SENSOR_DEFINITION for %1, sensor %2")
+                LogModel::log(tr("Request SENSOR_DEFINITION for %1, sensor %2")
                          .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id))
-                         .arg(sensor));
+                         .arg(sensor),
+                         CDL_SEV_INF,
+                            1);
                 Gadget2_SendRDMCommand(m_gadget->info().index,
                                m_gadget->info().port,
                                E120_GET_COMMAND,
@@ -301,7 +321,7 @@ void RDMController::advanceDiscoveryStateMachine()
 
 
     case DISC_IDLE:
-        for(int i=0; i<Gadget2_GetNumResponses(); i++)
+        for(uint i=0; i<Gadget2_GetNumResponses(); i++)
         {
             RDM_CmdC *resp = Gadget2_GetResponse(i);
             if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SENSOR_DEFINITION)
@@ -318,10 +338,12 @@ void RDMController::advanceDiscoveryStateMachine()
                 sensor.recorded_value_support   =       rdm_unpack_u8(resp->getBuffer(), 12);
                 sensor.description              =       rdm_unpack_string(resp->getBuffer(), 13, resp->getLength());
 
-                emit log(tr("%1 : Sensor %2 is %3")
+                LogModel::log(tr("%1 : Sensor %2 is %3")
                          .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
                          .arg(sensor.number)
-                         .arg(sensor.description));
+                         .arg(sensor.description),
+                              CDL_SEV_INF,
+                              1);
 
                 m_sensorDefinitions[resp->getDeviceId()].insert(sensor.number, sensor);
             }
@@ -392,9 +414,11 @@ void RDMController::fetchSensorValues(RdmDeviceInfo *info)
 
     foreach(RDMSensor sensor, sensors)
     {
-        emit log(tr("Request SENSOR_VALUE for %1, sensor %2")
+        LogModel::log(tr("Request SENSOR_VALUE for %1, sensor %2")
                      .arg(Util::formatRdmUid(info->manufacturer_id, info->device_id))
-                     .arg(sensor.number));
+                     .arg(sensor.number),
+                      CDL_SEV_INF,
+                      1);
 
             Gadget2_SendRDMCommand(m_gadget->info().index,
                            m_gadget->info().port,
@@ -413,7 +437,7 @@ void RDMController::fetchSensorValues(RdmDeviceInfo *info)
 
 void RDMController::readSensorValues()
 {
-    for(int i=0; i<Gadget2_GetNumResponses(); i++)
+    for(uint i=0; i<Gadget2_GetNumResponses(); i++)
     {
         RDM_CmdC *resp = Gadget2_GetResponse(i);
         if(resp->getResponseType() == E120_RESPONSE_TYPE_ACK && resp->getParameter() == E120_SENSOR_VALUE)
@@ -426,10 +450,12 @@ void RDMController::readSensorValues()
             value.recordedValue     = rdm_unpack_u16(resp->getBuffer(), 7);
             m_sensorValues[resp->getDeviceId()][value.number] = value;
 
-            emit log(tr("Got SENSOR_VALUE for %1, sensor %2, value %3")
+            LogModel::log(tr("Got SENSOR_VALUE for %1, sensor %2, value %3")
                      .arg(Util::formatRdmUid(resp->getManufacturerId(), resp->getDeviceId()))
                      .arg(value.number)
-                     .arg(value.value));
+                     .arg(value.value),
+                           CDL_SEV_INF,
+                           1);
         }
     }
 
@@ -441,14 +467,16 @@ void RDMController::executeCustomCommand(RDM_CmdC *command)
 {
     if(m_runningCustomCommand)
     {
-        emit log(tr("Error - already running a custom command"));
+        LogModel::log(tr("Error - already running a custom command"), CDL_SEV_INF, 1);
         return;
     }
     m_runningCustomCommand = true;
     m_currentCustomParameter = command->getParameter();
-    emit log(tr("Request %1 for %2")
+    LogModel::log(tr("Request %1 for %2")
                      .arg(command->getParameter())
-                     .arg(Util::formatRdmUid(command->getManufacturerId(), command->getDeviceId())));
+                     .arg(Util::formatRdmUid(command->getManufacturerId(), command->getDeviceId())),
+                  CDL_SEV_INF,
+                  1);
 
             Gadget2_SendRDMCommand(m_gadget->info().index,
                            m_gadget->info().port,
@@ -466,12 +494,12 @@ void RDMController::executeCustomCommand(RDM_CmdC *command)
 
 void RDMController::readCustomCommand()
 {
-    for(int i=0; i<Gadget2_GetNumResponses(); i++)
+    for(uint i=0; i<Gadget2_GetNumResponses(); i++)
     {
         RDM_CmdC *resp = Gadget2_GetResponse(i);
         if(resp->getParameter()==m_currentCustomParameter)
         {
-            emit log("Custom Command Complete");
+            LogModel::log("Custom Command Complete", CDL_SEV_INF, 1);
             m_runningCustomCommand = false;
             emit customCommandComplete(resp->getResponseType(),
                                    QByteArray(static_cast<const char*>(resp->getBuffer()), resp->getLength()));
@@ -480,7 +508,7 @@ void RDMController::readCustomCommand()
 
     if(m_runningCustomCommand)
     {
-        emit log("Custom Command Timedout");
+        LogModel::log("Custom Command Timedout", CDL_SEV_INF, 1);
         m_runningCustomCommand = false;
     }
 }

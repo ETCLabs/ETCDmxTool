@@ -37,6 +37,13 @@ public:
     virtual QVariant getProtocolName() = 0;
 
     /*
+     * @return Should this protocol be enabled by default
+     * Generally disable for 'greedy' protocols that absorb
+     * multiple start codes
+     */
+    virtual bool enableByDefault() = 0;
+
+    /*
      * @return Accepted startcodes
      */
     virtual QList<quint8> getStartCodes() = 0;

@@ -21,11 +21,11 @@
 #include "dissectors.h"
 #include <QPluginLoader>
 #include <QDir>
-#include <QDebug>
+#include "logmodel.h"
 
 dissectors::dissectors(QObject *parent) : QObject(parent)
 {
-    qDebug() << "Looking for dissectors...";
+    LogModel::log(tr("Loading Dissectors"), CDL_SEV_INF, 1);
     QDir dissectorDir(QDir::currentPath());
     for (auto dissectorDll : dissectorDir.entryList(QStringList("dissectorplugin*.dll")))
     {
@@ -35,10 +35,20 @@ dissectors::dissectors(QObject *parent) : QObject(parent)
             DissectorPlugin *dissector = qobject_cast<DissectorPlugin *>(plugin);
             if (dissector)
             {
-                qDebug() << "...Loaded:" << dissector->getProtocolName().toString() << "Startcode(s):" << dissector->getStartCodes();
+                QString startCodes;
+                foreach(auto sc, dissector->getStartCodes())
+                    startCodes.append(QString("%1 ").arg(sc, 2, 16, QChar('0')).toUpper());
+                LogModel::log(QString("Loaded Dissector %1, Accepts startcode(s) %2")
+                              .arg(dissector->getProtocolName().toString())
+                              .arg(startCodes),
+                              CDL_SEV_INF, 1);
                 m_dissectors.append(new s_DissectorList(dissector));
+                m_dissectors.last()->setEnabled(dissector->enableByDefault());
             } else {
-                qDebug() << "...Invalid" << dissectorDll;
+                LogModel::log(QString("Invalid Dissector %1")
+                              .arg(dissectorDll)
+                              , CDL_SEV_ERR
+                              , 1);
             }
         }
     }

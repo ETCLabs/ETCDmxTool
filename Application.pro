@@ -24,11 +24,11 @@ TEMPLATE = app
 TARGET = EtcDmxTool
 QT += core gui
 
-#   v2.0.0.3    Build with plugin-ized dissectors from Marcus
+# Extract version from Git tag/description
+GIT_COMMAND = git --git-dir $$shell_quote($$PWD/.git) --work-tree $$shell_quote($$PWD)
+GIT_TAG = $$system($$GIT_COMMAND describe --always --tags)
 
-PRODUCT_VERSION=2.0.0.3
-
-DEFINES += VERSION=\\\"$$PRODUCT_VERSION\\\"
+DEFINES += VERSION=\\\"$$GIT_TAG\\\"
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -62,7 +62,9 @@ HEADERS += src/e110_startcodes.h \
     src/selectdevicedialog.h \
     src/dissectors.h \
     src/customdataroles.h \
-    src/levelindicator.h
+    src/levelindicator.h \
+    src/logmodel.h \
+    src/gridwidget.h
 
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
@@ -79,7 +81,9 @@ SOURCES += src/main.cpp \
     src/fileopen.cpp \
     src/hexlineedit.cpp \
     src/dissectors.cpp \
-    src/levelindicator.cpp
+    src/levelindicator.cpp \
+    src/logmodel.cpp \
+    src/gridwidget.cpp
 
 FORMS += ui/mainwindow.ui \
     ui/selectdevicedialog.ui
@@ -105,7 +109,7 @@ FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/f
 GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
 GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
 
-DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${OUT_PWD}/dissectorplugin*.dll))
+DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${DESTDIR}/dissectorplugin*.dll))
 DISSECTOR_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/dissectorplugin*.dll))
 
 PRE_DEPLOY_COMMAND =  $$sprintf($${QMAKE_MKDIR_CMD}, $$shell_path($${DEPLOY_DIR})) $$escape_expand(\\n\\t)
@@ -116,7 +120,7 @@ PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DISSECTOR_DLL_SRC} $${DISSECTOR_DLL_DST} $
 PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DEPLOY_TARGET} $${DEPLOY_DIR} $$escape_expand(\\n\\t)
 DEPLOY_COMMAND = windeployqt
 DEPLOY_OPT = --dir $${DEPLOY_DIR}
-DEPLOY_INSTALLER = makensis /DPRODUCT_VERSION="$${PRODUCT_VERSION}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
+DEPLOY_INSTALLER = makensis /DPRODUCT_VERSION="$${GIT_TAG}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
 
 win32 {
     QMAKE_CXXFLAGS += /Zi

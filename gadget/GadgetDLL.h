@@ -12,6 +12,7 @@ struct RdmDeviceInfo;
 
 #define GADGET_DLL_DMX_BREAK 0x8000
 #define GADGET_DLL_FRAMING_ERROR 0x9000
+typedef void(__stdcall Gadget2_LogCallback)(const char *LogData);
 
 extern "C"
 {
@@ -96,7 +97,10 @@ extern "C"
     GADGET_DLL_API void Gadget2_SendRawBytes(unsigned int DeviceNum, unsigned int PortNum, unsigned char * Data, unsigned int Length);
 
     GADGET_DLL_API void Gadget2_SendBreakAndData(unsigned int DeviceNum, unsigned int PortNum, unsigned char StartCode, unsigned char * Data, unsigned int Length);
+	
+	GADGET_DLL_API void Gadget2_SetLogCallback(Gadget2_LogCallback *Callback);
 
+	GADGET_DLL_API void Gadget2_SetLogFilter(int verb, int cat, int sev);
 }
 
 

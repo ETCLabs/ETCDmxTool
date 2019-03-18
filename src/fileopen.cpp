@@ -19,12 +19,14 @@
 // THE SOFTWARE.
 
 #include "fileopen.h"
+#include "logmodel.h"
 
 FileOpen::FileOpen(PacketTable &packetTable, QString fileName, QObject *parent) : QObject(parent),
     m_packetTable(&packetTable)
 {
     // Check and open file
     m_file = new QFile(fileName);
+    LogModel::log(QString("Opening File %1").arg(fileName), CDL_SEV_INF, 1);
     bool ok = m_file->open(QIODevice::ReadOnly);
     if(!ok)
         return;
@@ -86,8 +88,11 @@ void FileOpen::doRead()
         }
         line = m_stream->readLine();
     }
+    LogModel::log(
+                QString("Finished loading file, %1 packets").arg(m_packetTable->rowCount()),
+                CDL_SEV_INF,
+                1);
 
-    qDebug("Done");
     emit Finished();
 }
 

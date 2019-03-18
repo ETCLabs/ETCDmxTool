@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1067</width>
-    <height>836</height>
+    <height>840</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -191,6 +191,59 @@ QToolButton:disabled
         </widget>
        </item>
        <item>
+        <widget class="QToolButton" name="tbDmxView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>DMX View</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../res/resources.qrc">
+           <normaloff>:/MainWindow/dmxgrid_dis.png</normaloff>
+           <normalon>:/MainWindow/dmxgrid_en.png</normalon>
+           <disabledoff>:/MainWindow/dmxgrid_off.png</disabledoff>
+           <disabledon>:/MainWindow/dmxgrid_off.png</disabledon>:/MainWindow/dmxgrid_dis.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonTextUnderIcon</enum>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::NoArrow</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QToolButton" name="tbController">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -277,7 +330,7 @@ QToolButton:disabled
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="snifferPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -635,7 +688,10 @@ QProgressBar::chunk
               <string>Crossfade</string>
              </property>
              <property name="popupMode">
-              <enum>QToolButton::MenuButtonPopup</enum>
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonTextOnly</enum>
              </property>
             </widget>
            </item>
@@ -1159,25 +1215,15 @@ QProgressBar::chunk
              </item>
             </layout>
            </widget>
-           <widget class="QPlainTextEdit" name="teRdmControlLog">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-              <horstretch>10</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(0, 0, 0);
-color: rgb(170, 170, 0);
-font: 8pt &quot;Courier New&quot;;</string>
-            </property>
-            <property name="plainText">
-             <string>RDM Information Log
-</string>
-            </property>
-           </widget>
           </widget>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="page">
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <item>
+         <widget class="GridWidget" name="dmxGridWidget" native="true"/>
         </item>
        </layout>
       </widget>
@@ -1191,7 +1237,7 @@ font: 8pt &quot;Courier New&quot;;</string>
      <x>0</x>
      <y>0</y>
      <width>1067</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1201,6 +1247,7 @@ font: 8pt &quot;Courier New&quot;;</string>
     <addaction name="actionSave_File"/>
     <addaction name="actionOpen_File"/>
     <addaction name="actionExport_to_PcapNg"/>
+    <addaction name="actionViewLog"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuCapture">
@@ -1254,6 +1301,101 @@ font: 8pt &quot;Courier New&quot;;</string>
    <addaction name="actionStart_Capture"/>
    <addaction name="actionStop_Capture"/>
    <addaction name="actionRestart_Capture"/>
+  </widget>
+  <widget class="QDockWidget" name="dwLogging">
+   <property name="windowTitle">
+    <string>Logging</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_12">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <widget class="QToolButton" name="tbSaveLog">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../res/resources.qrc">
+           <normaloff>:/MainWindow/save.png</normaloff>:/MainWindow/save.png</iconset>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Verbosity</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="sbLogVerbosity"/>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbCategory">
+         <property name="text">
+          <string>Category</string>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonTextOnly</enum>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::NoArrow</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbSeverity">
+         <property name="text">
+          <string>Severity</string>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonTextOnly</enum>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::NoArrow</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QListView" name="lvLog">
+       <property name="showDropIndicator" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::NoSelection</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <action name="actionStart_Capture">
    <property name="checkable">
@@ -1350,8 +1492,21 @@ font: 8pt &quot;Courier New&quot;;</string>
     <string>Seconds Since Previous Captured Packet</string>
    </property>
   </action>
+  <action name="actionViewLog">
+   <property name="text">
+    <string>View Log...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>GridWidget</class>
+   <extends>QWidget</extends>
+   <header>gridwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../res/resources.qrc"/>
  </resources>

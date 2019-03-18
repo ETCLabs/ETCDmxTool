@@ -47,7 +47,7 @@ public:
 
     struct CaptureDeviceInfo {
         DevType type;
-        unsigned int index;
+        int index;
         QString description;
         unsigned int port;
         int deviceCapabilities;
@@ -79,14 +79,19 @@ public:
     };
     ICaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info);
     virtual bool open() = 0;
+    bool isOpen() const { return m_deviceOpen; }
     virtual void close() = 0;
     virtual void setMode(CaptureDeviceMode mode) { m_mode = mode;}
+    virtual CaptureDeviceMode getMode() { return m_mode; }
     virtual void setDmxLevels(quint8 *levels, size_t length);
     QList<Packet> getPackets();
     QString description() const { return m_info.description;}
     const CaptureDeviceList::CaptureDeviceInfo info() const { return m_info;}
 signals:
     void packetsReady();
+    void closed();
+    void sniffing();
+    void transmitting();
 protected:
     void addPacket(const Packet &packet);
     CaptureDeviceMode m_mode;
@@ -94,6 +99,7 @@ protected:
     QMutex m_listMutex;
     quint8 m_txLevels[513];
     CaptureDeviceList::CaptureDeviceInfo m_info;
+    bool m_deviceOpen;
 };
 
 class WhipCaptureDevice : public ICaptureDevice
