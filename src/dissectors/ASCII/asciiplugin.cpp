@@ -40,6 +40,11 @@ QVariant ASCIIPlugin::getProtocolName()
     return "E1.11-2008 ASCII Text Packet";
 }
 
+bool ASCIIPlugin::enableByDefault()
+{
+    return true;
+}
+
 QList<quint8> ASCIIPlugin::getStartCodes()
 {
     QList<quint8> startCodes;

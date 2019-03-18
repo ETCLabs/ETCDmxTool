@@ -33,6 +33,7 @@ class ASCIIPlugin : public QObject, DissectorPlugin
 
 public:
     QVariant getProtocolName() override;
+    bool enableByDefault() override;
     QList<quint8> getStartCodes() override;
     QVariant getSource(const Packet &p) override;
     QVariant getDestination(const Packet &p) override;
