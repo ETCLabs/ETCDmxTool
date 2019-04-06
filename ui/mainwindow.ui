@@ -330,7 +330,7 @@ QToolButton:disabled
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="snifferPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">

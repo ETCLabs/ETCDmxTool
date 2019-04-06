@@ -33,6 +33,7 @@ struct RdmDeviceInfo;
 
 #define GADGET_DLL_DMX_BREAK 0x8000
 #define GADGET_DLL_FRAMING_ERROR 0x9000
+typedef void(__stdcall Gadget2_LogCallback)(const char *LogData);
 
 extern "C"
 {

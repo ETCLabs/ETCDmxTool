@@ -151,7 +151,6 @@ QList<FTDComm::FtdiDevice> FTDComm::GetUsbWhips()
     {
         QString DevSn = GetDeviceSerialNumber(i);
         QString DevDesc = GetDeviceDescription(i);
-        qDebug() << DevSn << DevDesc;
         if (DevSn.contains("ETC", Qt::CaseInsensitive))
         {
             result.append(FtdiDevice(i, DevSn, DevDesc));

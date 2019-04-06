@@ -161,6 +161,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     {
         ui.tbController->setEnabled(false);
     }
+    #else
+        ui.tbController->setEnabled(false);
+        ui.tbController->setVisible(false);
     #endif
 
     ui.actionUpdateGadget->setEnabled(gadgetDevice!=Q_NULLPTR);
@@ -584,6 +587,7 @@ void MainWindow::modeButtonPressed(bool checked)
         LogModel::log(tr("Switched to DMX Transmit Mode"), CDL_SEV_INF, 1);
         break;
     case OPMODE_RDMCONTROL: // RDM Controller Mode
+        #if defined (RDMCONTROL)
         ui.menuCapture->setEnabled(false);
         ui.actionSave_File->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
@@ -593,6 +597,7 @@ void MainWindow::modeButtonPressed(bool checked)
         // Auto start discovery
         if (m_controller) m_controller->startDiscovery();
         LogModel::log(tr("Switched to RDM Controller Mode"), CDL_SEV_INF, 1);
+        #endif
         break;
     case OPMODE_DMXVIEW: // DMX View Mode
         ui.menuCapture->setEnabled(false);
@@ -675,11 +680,10 @@ void MainWindow::stopCapture()
 {
     if (m_captureDevice)
         m_captureDevice->close();
-    }
 
-    if(ui.stackedWidget->currentIndex()==0)
+    if (ui.stackedWidget->currentIndex()==0)
         ui.statusBar->showMessage(tr("Stopped Capturing"));
-    if(ui.stackedWidget->currentIndex()==1)
+    if (ui.stackedWidget->currentIndex()==1)
         ui.statusBar->showMessage(tr("Stopped Sending"));
 
     ui.actionStart_Capture->setChecked(false);
@@ -1502,95 +1506,4 @@ void MainWindow::timestampDisplayChanged()
         ui.actionSecondsSincePrevious->setChecked(true);
         m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET);
     }
-}
-
-void MainWindow::on_actionViewLog_triggered()
-{
-    if(!ui.dwLogging->isVisible())
-        ui.dwLogging->show();
-}
-
-void MainWindow::on_actionUpdateGadget_triggered()
-{
-    QString defaultPath;
-    QStringList desktopLoc = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation);
-    if(desktopLoc.count()>0) defaultPath = desktopLoc.first();
-
-    // Look in the default location, C:\etc\nodesbin
-    if(QDir("C:/etc/nodesbin").exists())
-    {
-        defaultPath = "C:/etc/nodesbin";
-        QStringList filter;
-        filter << "*Gadget_II*";
-        QDirIterator it(defaultPath, filter, QDir::AllEntries | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-        QStringList files;
-        while (it.hasNext())
-            files << it.next();
-        files.sort();
-        if(files.count()>0)
-            defaultPath = files.last();
-    }
-
-    QString firmwareFile = QFileDialog::getOpenFileName(this, tr("Select Gadget Firmware"), defaultPath);
-    if(firmwareFile.isEmpty())
-        return;
-    if(!m_captureDevice) return;
-    GadgetCaptureDevice *d = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
-    if(!d) return;
-
-    UpdateDialog dialog(this);
-    connect(d, SIGNAL(updateProgressText(QString)), &dialog, SLOT(setStatusText(QString)));
-    connect(d, SIGNAL(updateComplete()), &dialog, SLOT(doneAndRestart()));
-
-    d->updateFirmware(firmwareFile);
-
-    dialog.exec();
-}
-
-void MainWindow::logCategoryToggle(bool checked)
-{
-    QAction *a = dynamic_cast<QAction *>(sender());
-    if(!a) return;
-
-    int category = LogModel::getInstance()->getCategoryFilter();
-    if(checked)
-        category = category | a->data().toInt();
-    else
-        category = category & ~(a->data().toInt());
-    LogModel::getInstance()->setCategoryFilter(category);
-}
-
-void MainWindow::logSeverityToggle(bool checked)
-{
-    QAction *a = dynamic_cast<QAction *>(sender());
-    if(!a) return;
-
-    int severity = LogModel::getInstance()->getSeverityFilter();
-    if(checked)
-        severity = severity | a->data().toInt();
-    else
-        severity = severity & ~(a->data().toInt());
-    LogModel::getInstance()->setSeverity(severity);
-}
-
-void MainWindow::on_tbSaveLog_pressed()
-{
-    QString filename = QFileDialog::getSaveFileName(this,
-                                 tr("Save Log File"),
-                                 QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-                                 tr("Text Files (*.txt)"));
-    if(filename.isEmpty())
-        return;
-
-    QFile file(filename);
-    bool ok = file.open(QIODevice::WriteOnly);
-    if(!ok)
-    {
-        QMessageBox::warning(this,
-                             tr("Couldn't Open File"),
-                             tr("Unable to open file %1 to save").arg(filename)
-                             );
-        return;
-    }
-    LogModel::getInstance()->saveFile(&file);
 }
