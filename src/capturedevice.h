@@ -132,6 +132,7 @@ public:
     void close();
     QList<RdmDeviceInfo *> getDeviceInfo() { return m_infoList;}
     void handleGadgetUpdate(Gadget2_UpdateStatus status);
+    virtual void setDmxEnabled(bool enabled);
 public slots:
     void doDiscovery();
     void updateFirmware(const QString &firmwarePath);
