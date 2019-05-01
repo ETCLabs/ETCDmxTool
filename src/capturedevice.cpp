@@ -136,7 +136,7 @@ void WhipCaptureDevice::onTimer()
         if(length>0)
             emit packetsReady();
     }
-    else
+    else if(m_enabled)
     {
         m_listMutex.lock();
         m_comm->SendBreakStartAndData(0, m_txLevels, 512);
@@ -253,9 +253,16 @@ void GadgetCaptureDevice::stopSending()
 
 void GadgetCaptureDevice::sendData()
 {
-    Gadget2_SendDMX(m_deviceNum, m_port, m_txLevels, 512);
+    if(m_enabled)
+        Gadget2_SendDMX(m_deviceNum, m_port, m_txLevels, 512);
 }
 
+void GadgetCaptureDevice::setDmxEnabled(bool enabled)
+{
+    m_enabled = enabled;
+    if(!enabled)
+        Gadget2_DisableDMX(m_deviceNum, m_port);
+}
 
 void GadgetCaptureDevice::stopReading()
 {
@@ -276,7 +283,7 @@ void GadgetCaptureDevice::close()
 
 void GadgetCaptureDevice::doDiscovery()
 {
-    Gadget2_StartDiscovery(m_deviceNum, m_port);
+    Gadget2_DoFullDiscovery(m_deviceNum, m_port);
     QTimer::singleShot(15000, this, SLOT(discoveryFinished()));
 }
 

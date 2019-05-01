@@ -74,7 +74,7 @@ void RDMController::advanceDiscoveryStateMachine()
     case DISC_START_DISCOVERY:
             LogModel::log("Beginning RDM Discovery..", CDL_SEV_INF, 1);
             LogModel::log("Waiting 10s for device discovery", CDL_SEV_INF, 1);
-            Gadget2_StartDiscovery(m_gadget->info().index, m_gadget->info().port);
+            Gadget2_DoFullDiscovery(m_gadget->info().index, m_gadget->info().port);
             QTimer::singleShot(10000, this, SLOT(advanceDiscoveryStateMachine()));
             m_discoveryState = DISC_END_DISCOVERY;
             emit discoveryStarted();

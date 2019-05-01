@@ -22,8 +22,67 @@ extern "C"
 
     GADGET_DLL_API int Gadget2_Disconnect(void);
 
-    GADGET_DLL_API void Gadget2_StartDiscovery(unsigned int DeviceID, unsigned int PortNum);
+	/***************** Logging *****************/
+	/* Set the callback for log data */
+	GADGET_DLL_API void Gadget2_SetLogCallback(Gadget2_LogCallback *Callback);
 
+	/* Set the verbosity of log messages */
+	GADGET_DLL_API void Gadget2_SetLogFilter(int verb, int cat, int sev);
+
+	/***************** DMX Transmission *****************/
+	/* Send DMX */
+	GADGET_DLL_API void Gadget2_SendDMX(unsigned int DeviceNum, unsigned int PortNum, unsigned char * Buffer, unsigned int Size);
+
+	/* Disable DMX */
+	GADGET_DLL_API void Gadget2_DisableDMX(unsigned int DeviceNum, unsigned int PortNum);
+
+	/***************** Information and control of the Gadget *****************/
+	/* Get the number of Gadget devices found on the PC */
+	GADGET_DLL_API unsigned int Gadget2_GetNumGadgetDevices();
+
+	/* Return the version number of the specified device as a string */
+	GADGET_DLL_API unsigned char * Gadget2_GetGadgetVersion(unsigned int DeviceNum);
+
+	/* Return the serial number of the specified device as a string */
+	GADGET_DLL_API unsigned int Gadget2_GetGadgetSerialNumber(unsigned int DeviceNum);
+
+	/* Return the type of the specified device as a string */
+	GADGET_DLL_API const char * Gadget2_GetGadgetType(unsigned int DeviceNum);
+
+	/* Return the number of DMX ports the specified device has */
+	GADGET_DLL_API unsigned char Gadget2_GetPortCount(unsigned int DeviceNum);
+
+	/* Set the callback for status updates on the firmware update of Gadget2. Context is passed back with the callback */
+	GADGET_DLL_API void Gadget2_SetUpdateStatusCallback(Gadget2_UpdateStatusCallback *Callback, void* Context);
+
+	/* Perform an update of the Gadget2. FirmwarePath should point to the S-Record path for the Gadget Firmware */
+	GADGET_DLL_API void Gadget2_PerformFirmwareUpdate(unsigned int DeviceNum, const wchar_t *FirmwarePath);
+
+	/***************** Raw access mode *****************/
+	/* Set the device into Raw Access mode*/
+	GADGET_DLL_API int Gadget2_SetRawReceiveMode(unsigned int DeviceNum, unsigned int PortNum);
+
+	/* Return the number of bytes in the raw acess receive queue */
+	GADGET_DLL_API unsigned int Gadget2_GetNumberOfRXRawBytes(unsigned int DeviceNum, unsigned int PortNum);
+
+	/* Get raw bytes from the raw access queue. Raw bytes are copied into the provided Data pointer, so it must be of size Length and must have enough space for the data*/
+	GADGET_DLL_API void Gadget2_GetRXRawBytes(unsigned int DeviceNum, unsigned int PortNum, unsigned short * Data, unsigned int Length);
+
+	/* Send raw bytes via the Gadget2 */
+	GADGET_DLL_API void Gadget2_SendRawBytes(unsigned int DeviceNum, unsigned int PortNum, unsigned char * Data, unsigned int Length);
+
+	/* Send a break, startcode and data */
+	GADGET_DLL_API void Gadget2_SendBreakAndData(unsigned int DeviceNum, unsigned int PortNum, unsigned char StartCode, unsigned char * Data, unsigned int Length);
+
+	/***************** RDM Interface Functions *****************/
+
+	/* Do full RDM discovery on the specified device and port */
+    GADGET_DLL_API void Gadget2_DoFullDiscovery(unsigned int DeviceID, unsigned int PortNum);
+
+	/* Turn RDM on or off. Turning it on enables background discovery, and RDM on the port*/
+	GADGET_DLL_API void Gadget2_SetRDMEnabled(unsigned int DeviceNum, unsigned int PortNum, unsigned char Enable);
+
+	/* Return the number of discovered devices */
     GADGET_DLL_API unsigned int Gadget2_GetDiscoveredDevices(void);
 
     GADGET_DLL_API RdmDeviceInfo * Gadget2_GetDeviceInfo(unsigned int Index);

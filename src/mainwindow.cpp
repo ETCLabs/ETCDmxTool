@@ -513,7 +513,19 @@ void MainWindow::faderMoved(int value)
     }
 
     updateTxLevels();
+}
 
+void MainWindow::on_btnToggleDmx_toggled(bool checked)
+{
+    if(checked)
+    {
+        ui.btnToggleDmx->setText(tr("Enable DMX"));
+        if(m_captureDevice) m_captureDevice->setDmxEnabled(false);
+    }
+    else {
+        ui.btnToggleDmx->setText(tr("Disable DMX"));
+        if(m_captureDevice) m_captureDevice->setDmxEnabled(true);
+    }
 }
 
 void MainWindow::modeButtonPressed(bool checked)

@@ -71,6 +71,7 @@ public slots:
     void logCategoryToggle(bool checked);
     void logSeverityToggle(bool checked);
     void on_tbSaveLog_pressed();
+    void on_btnToggleDmx_toggled(bool checked);
 private slots:
     void updateFilterString(const QString &filterText);
 	void setFilterColumn(int index);

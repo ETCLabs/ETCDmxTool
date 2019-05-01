@@ -84,6 +84,7 @@ public:
     virtual void setMode(CaptureDeviceMode mode) { m_mode = mode;}
     virtual CaptureDeviceMode getMode() { return m_mode; }
     virtual void setDmxLevels(quint8 *levels, size_t length);
+    virtual void setDmxEnabled(bool enabled) = 0;
     QList<Packet> getPackets();
     QString description() const { return m_info.description;}
     const CaptureDeviceList::CaptureDeviceInfo info() const { return m_info;}
@@ -109,6 +110,7 @@ public:
     WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info);
     bool open();
     void close();
+    virtual void setDmxEnabled(bool enabled) {m_enabled = enabled;}
 private slots:
     void onTimer();
 private:
@@ -116,6 +118,7 @@ private:
     int m_deviceNum;
     FTDComm *m_comm;
     QByteArray m_packetBuffer;
+    bool m_enabled = true;
 };
 
 class GadgetCaptureDevice : public ICaptureDevice
@@ -146,6 +149,7 @@ private:
     QThread *m_gadgetReadThread;
     QByteArray m_packetBuffer;
     QList<RdmDeviceInfo *> m_infoList;
+    bool m_enabled = true;
 };
 
 
