@@ -26,6 +26,7 @@
 
 #include <QThread>
 #include <QTimer>
+#include <QDir>
 #include "logmodel.h"
 
 /******************************************** ICaptureDevice *****************************/
@@ -148,6 +149,13 @@ void WhipCaptureDevice::onTimer()
 
 /***************************** GadgetCaptureDevice ****************************************/
 
+void __stdcall GadgetUpdateCallback(Gadget2_UpdateStatus status, void* context)
+{
+    GadgetCaptureDevice *device = static_cast<GadgetCaptureDevice *>(context);
+    device->handleGadgetUpdate(status);
+}
+
+
 GadgetCaptureDevice::GadgetCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info)
 {
     m_deviceNum = m_info.index;
@@ -157,6 +165,7 @@ GadgetCaptureDevice::GadgetCaptureDevice(const CaptureDeviceList::CaptureDeviceI
     this->moveToThread(m_gadgetReadThread);
 
     Gadget2_Connect();
+    Gadget2_SetUpdateStatusCallback(GadgetUpdateCallback, static_cast<void*>(this));
     m_gadgetReadThread->start();
 }
 
@@ -176,7 +185,7 @@ void GadgetCaptureDevice::readData()
         Gadget2_GetRXRawBytes(m_deviceNum, m_port, buffer, numBytes);
         LogModel::log(QString("Gadget received %1 bytes").arg(numBytes),
                       CDL_SEV_INF,
-                      1);
+                      5);
 
         for(unsigned int i = 0; i < numBytes; ++i)
         {
@@ -297,6 +306,45 @@ void GadgetCaptureDevice::discoveryFinished()
 }
 
 
+void GadgetCaptureDevice::updateFirmware(const QString &firmwarePath)
+{
+    if(QThread::currentThread() == this->thread())
+    {
+        QString nativePath = QDir::toNativeSeparators(firmwarePath);
+        wchar_t *filename = new wchar_t[nativePath.length() + 1];
+        wmemset(filename, 0, nativePath.length() + 1);
+        nativePath.toWCharArray(filename);
+        Gadget2_PerformFirmwareUpdate(m_deviceNum, filename);
+        delete[] filename;
+    }
+    else {
+        QMetaObject::invokeMethod(this, "updateFirmware", Q_ARG(QString, firmwarePath));
+    }
+}
+
+void GadgetCaptureDevice::handleGadgetUpdate(Gadget2_UpdateStatus status)
+{
+    switch(status)
+    {
+    case Gadget2_Update_Beginning:
+        emit updateProgressText(tr("Beginning Gadget2 Update - setting device into Bootloader"));
+        break;
+    case Gadget2_Update_BootloaderFound:
+        emit updateProgressText(tr("Found Gadget2 in Bootloader mode"));
+        break;
+    case Gadget2_Update_TransferringFile:
+        emit updateProgressText(tr("Transferring update file to Gadget2"));
+        break;
+    case Gadget2_Update_ReadyForReboot:
+        emit updateProgressText(tr("Gadget2 update Complete. Please power cycle the device and retstart the appliction. ETCDMXTool will now exit"));
+        emit updateComplete();
+        break;
+    case Gadget2_Update_Error:
+        emit updateProgressText(tr("Gadget2 update failed. Please power cycle the device, restart the appliction, and try again. ETCDMXTool will now exit"));
+        emit updateComplete();
+        break;
+    }
+}
 
 /**************************** CaptureDeviceList ****************************/
 
@@ -312,22 +360,25 @@ CaptureDeviceList::CaptureDeviceList()
         {
             // Assume two ports per gadget
             // TODO IO cards with more ports..
-            for(unsigned int port=1; port<=2; port++)
+            for(unsigned int port=1; port<=Gadget2_GetPortCount(i); port++)
             {
                 unsigned char * version = Gadget2_GetGadgetVersion(i);
                 unsigned int serial = Gadget2_GetGadgetSerialNumber(i);
+                const char *deviceType = Gadget2_GetGadgetType(i);
 
                 CaptureDeviceInfo info;
                 info.type = DEVTYPE_GADGET;
                 info.index = i;
                 info.port = port;
-                info.description = QString("Gadget S/N %1 (v%2) - Port %3")
+                info.description = QString("%1 S/N %2 (v%3) - Port %4")
+                        .arg(deviceType)
                         .arg(serial)
                         .arg(reinterpret_cast<char*>(version))
                         .arg(port);
                 info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER;
-                // Only v1.2 and above can sniff...
+                // Only Gadget2 v1.2 and above can sniff...
                 if (
+                        QString(deviceType)==QString("Gadget 2") &&
                         !QString(reinterpret_cast<char*>(version)).startsWith("1.0.") &&
                         !QString(reinterpret_cast<char*>(version)).startsWith("1.1.")
                     ) {

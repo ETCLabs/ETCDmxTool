@@ -56,6 +56,7 @@ public slots:
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
     void on_actionViewLog_triggered();
+    void on_actionUpdateGadget_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
     void modeButtonPressed(bool checked);
@@ -190,7 +191,7 @@ private:
     QComboBox *m_commandCombo;
     QComboBox *m_paramCombo;
     QSpinBox *m_subDeviceSpin;
-    OperationMode m_mode;
+    OperationMode m_mode = OPMODE_SNIFFER;
 };
 
 #endif // MAINWINDOW_H

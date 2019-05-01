@@ -25,6 +25,7 @@
 #include "whip/ftdcomm.h"
 #include "packetbuffer.h"
 #include "etc_include/RdmDeviceInfo.h"
+#include "GadgetDLL.h"
 
 
 class ICaptureDevice;
@@ -130,10 +131,14 @@ public:
     bool open();
     void close();
     QList<RdmDeviceInfo *> getDeviceInfo() { return m_infoList;}
+    void handleGadgetUpdate(Gadget2_UpdateStatus status);
 public slots:
     void doDiscovery();
+    void updateFirmware(const QString &firmwarePath);
 signals:
     void discoveryDataReady();
+    void updateProgressText(QString text);
+    void updateComplete();
 private slots:
     void readData();
     void sendData();

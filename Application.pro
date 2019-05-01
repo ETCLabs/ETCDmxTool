@@ -64,7 +64,8 @@ HEADERS += src/e110_startcodes.h \
     src/customdataroles.h \
     src/levelindicator.h \
     src/logmodel.h \
-    src/gridwidget.h
+    src/gridwidget.h \
+    src/updatedialog.h
 
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
@@ -83,7 +84,8 @@ SOURCES += src/main.cpp \
     src/dissectors.cpp \
     src/levelindicator.cpp \
     src/logmodel.cpp \
-    src/gridwidget.cpp
+    src/gridwidget.cpp \
+    src/updatedialog.cpp
 
 FORMS += ui/mainwindow.ui \
     ui/selectdevicedialog.ui
