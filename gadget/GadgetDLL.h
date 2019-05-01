@@ -121,11 +121,11 @@ extern "C"
 
 	/***************** RDM Interface Functions *****************/
 
-	/* Start RDM discovery on the specified device and port */
-    GADGET_DLL_API void Gadget2_StartDiscovery(unsigned int DeviceID, unsigned int PortNum);
+	/* Do full RDM discovery on the specified device and port */
+    GADGET_DLL_API void Gadget2_DoFullDiscovery(unsigned int DeviceID, unsigned int PortNum);
 
-	/* Turn RDM discovery on or off */
-	GADGET_DLL_API void Gadget2_ToggleRDMDiscovery(unsigned int DeviceNum, unsigned int PortNum, unsigned char Enable);
+	/* Turn RDM on or off. Turning it on enables background discovery, and RDM on the port*/
+	GADGET_DLL_API void Gadget2_SetRDMEnabled(unsigned int DeviceNum, unsigned int PortNum, unsigned char Enable);
 
 	/* Return the number of discovered devices */
     GADGET_DLL_API unsigned int Gadget2_GetDiscoveredDevices(void);
