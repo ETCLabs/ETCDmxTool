@@ -58,7 +58,7 @@
 #include "etc_include/RDM_CmdC.h"
 #endif
 #if defined(GADGET2)
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 #endif
 
 // Logging

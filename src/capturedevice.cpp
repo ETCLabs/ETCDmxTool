@@ -20,7 +20,7 @@
 
 #include "capturedevice.h"
 #if defined (GADGET2)
-#include "GadgetExport.h"
+#include "GadgetDLL.h"
 #endif
 #include "ftd2xx.h"
 #include "whip/ftdcomm.h"
