@@ -306,8 +306,6 @@ void GadgetCaptureDevice::discoveryFinished()
 
     emit discoveryDataReady();
 }
-#endif //GADGET2
-
 
 void GadgetCaptureDevice::updateFirmware(const QString &firmwarePath)
 {
@@ -348,6 +346,8 @@ void GadgetCaptureDevice::handleGadgetUpdate(Gadget2_UpdateStatus status)
         break;
     }
 }
+#endif //GADGET2
+
 
 /**************************** CaptureDeviceList ****************************/
 

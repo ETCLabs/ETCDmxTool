@@ -166,7 +166,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         ui.tbController->setVisible(false);
     #endif
 
+    #if defined (GADGET2)
     ui.actionUpdateGadget->setEnabled(gadgetDevice!=Q_NULLPTR);
+    #endif
 
     if(m_captureDevice)
     {
@@ -1506,4 +1508,109 @@ void MainWindow::timestampDisplayChanged()
         ui.actionSecondsSincePrevious->setChecked(true);
         m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET);
     }
+}
+
+void MainWindow::on_actionViewLog_triggered()
+{
+    if(!ui.dwLogging->isVisible())
+        ui.dwLogging->show();
+}
+
+void MainWindow::on_actionUpdateGadget_triggered()
+{
+    #if defined (GADGET2)
+    QString defaultPath;
+    QStringList desktopLoc = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation);
+    if(desktopLoc.count()>0) defaultPath = desktopLoc.first();
+
+    // Look in the default location, C:\etc\nodesbin
+    if(QDir("C:/etc/nodesbin").exists())
+    {
+        defaultPath = "C:/etc/nodesbin";
+        QStringList filter;
+        filter << "*Gadget_II*";
+        QDirIterator it(defaultPath, filter, QDir::AllEntries | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        QStringList files;
+        while (it.hasNext())
+            files << it.next();
+        files.sort();
+        if(files.count()>0)
+            defaultPath = files.last();
+    }
+
+    QString firmwareFile = QFileDialog::getOpenFileName(this, tr("Select Gadget Firmware"), defaultPath);
+    if(firmwareFile.isEmpty())
+        return;
+    if(!m_captureDevice) return;
+    GadgetCaptureDevice *d = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
+    if(!d) return;
+
+    UpdateDialog dialog(this);
+    connect(d, SIGNAL(updateProgressText(QString)), &dialog, SLOT(setStatusText(QString)));
+    connect(d, SIGNAL(updateComplete()), &dialog, SLOT(doneAndRestart()));
+
+    d->updateFirmware(firmwareFile);
+
+    dialog.exec();
+    #else
+        Gadget2NotAvaliable();
+    #endif
+}
+
+void MainWindow::logCategoryToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int category = LogModel::getInstance()->getCategoryFilter();
+    if(checked)
+        category = category | a->data().toInt();
+    else
+        category = category & ~(a->data().toInt());
+    LogModel::getInstance()->setCategoryFilter(category);
+}
+
+void MainWindow::logSeverityToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int severity = LogModel::getInstance()->getSeverityFilter();
+    if(checked)
+        severity = severity | a->data().toInt();
+    else
+        severity = severity & ~(a->data().toInt());
+    LogModel::getInstance()->setSeverity(severity);
+}
+
+void MainWindow::on_tbSaveLog_pressed()
+{
+    QString filename = QFileDialog::getSaveFileName(this,
+                                 tr("Save Log File"),
+                                 QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                 tr("Text Files (*.txt)"));
+    if(filename.isEmpty())
+        return;
+
+    QFile file(filename);
+    bool ok = file.open(QIODevice::WriteOnly);
+    if(!ok)
+    {
+        QMessageBox::warning(this,
+                             tr("Couldn't Open File"),
+                             tr("Unable to open file %1 to save").arg(filename)
+                             );
+        return;
+    }
+    LogModel::getInstance()->saveFile(&file);
+}
+
+void MainWindow::Gadget2NotAvaliable()
+{
+    QMessageBox msgBox;
+    msgBox.setText("Action unsupported on this platform");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.exec();
 }

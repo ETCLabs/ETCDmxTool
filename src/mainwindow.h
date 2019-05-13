@@ -76,6 +76,7 @@ public slots:
     void logSeverityToggle(bool checked);
     void on_tbSaveLog_pressed();
     void on_btnToggleDmx_toggled(bool checked);
+    void Gadget2NotAvaliable();
 private slots:
     void updateFilterString(const QString &filterText);
 	void setFilterColumn(int index);

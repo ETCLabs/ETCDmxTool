@@ -14,7 +14,9 @@ LogModel *LogModel::getInstance()
 LogModel::LogModel(QObject *parent)
     : QAbstractListModel(parent)
 {
+    #if defined (GADGET2)
     Gadget2_SetLogCallback(GadgetLogCallback);
+    #endif
     QSettings settings(this);
     m_verbosity = settings.value("LogVerbosity", QVariant(1)).toInt();
     m_category = settings.value("LogCategory", QVariant(CDL_CAT_ALL)).toInt();
@@ -96,10 +98,12 @@ void LogModel::log(const QString &message, quint32 severity, int verbosity)
     LogModel::getInstance()->doLog(message, severity, verbosity);
 }
 
+#if defined (GADGET2)
 void __stdcall GadgetLogCallback(const char* logData)
 {
     LogModel::getInstance()->logWithoutFilter(QString(logData));
 }
+#endif
 
 QString LogModel::severityToString(int severity)
 {
@@ -177,7 +181,9 @@ int LogModel::getSeverityFilter() const
 void LogModel::setSeverity(int severity)
 {
     m_severity = severity;
+    #if defined (GADGET2)
     Gadget2_SetLogFilter(m_verbosity, m_category, m_severity);
+    #endif
 }
 
 int LogModel::getCategoryFilter() const
@@ -188,7 +194,9 @@ int LogModel::getCategoryFilter() const
 void LogModel::setCategoryFilter(int category)
 {
     m_category = category;
+    #if defined (GADGET2)
     Gadget2_SetLogFilter(m_verbosity, m_category, m_severity);
+    #endif
 }
 
 int LogModel::getVerbosityFilter() const
@@ -199,7 +207,9 @@ int LogModel::getVerbosityFilter() const
 void LogModel::setVerbosityFilter(int value)
 {
     m_verbosity = value;
+    #if defined (GADGET2)
     Gadget2_SetLogFilter(m_verbosity, m_category, m_severity);
+    #endif
 }
 
 void LogModel::saveFile(QFile *file)

@@ -26,7 +26,9 @@
 
 
 #include <QAbstractListModel>
+#if defined (GADGET2)
 #include "GadgetDLL.h"
+#endif
 #include <QMap>
 #include <QFile>
 
@@ -98,7 +100,9 @@ private:
     int m_verbosity = 5;
 };
 
+#if defined (GADGET2)
 void __stdcall GadgetLogCallback(const char* logData);
+#endif
 
 
 #endif // LOGMODEL_H
