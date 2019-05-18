@@ -189,7 +189,7 @@ private:
     QComboBox *m_commandCombo;
     QComboBox *m_paramCombo;
     QSpinBox *m_subDeviceSpin;
-    OperationMode m_mode;
+    OperationMode m_mode = OPMODE_SNIFFER;
 };
 
 #endif // MAINWINDOW_H
