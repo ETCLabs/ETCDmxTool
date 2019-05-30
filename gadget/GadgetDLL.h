@@ -34,6 +34,16 @@ struct RdmDeviceInfo;
 #define GADGET_DLL_DMX_BREAK 0x8000
 #define GADGET_DLL_FRAMING_ERROR 0x9000
 
+/* The available speeds for Gadget DMX output */
+enum {
+	GADGET_DLL_SPEED_MAX,
+	GADGET_DLL_SPEED_FAST,
+	GADGET_DLL_SPEED_MEDIUM,
+	GADGET_DLL_SPEED_SLOW,
+	GADGET_DLL_SPEED_SYNC,
+	GADGET_DLL_SPEED_COUNT
+};
+
 extern "C"
 {
 	/***************** Type Definitions *****************/
@@ -80,6 +90,9 @@ extern "C"
 
 	/* Disable DMX */
 	GADGET_DLL_API void Gadget2_DisableDMX(unsigned int DeviceNum, unsigned int PortNum);
+
+	/* Set DMX Speed */
+	GADGET_DLL_API void Gadget2_SetDmxSpeed(unsigned int DeviceNum, unsigned int PortNum, unsigned int Speed);
 
 	/***************** Information and control of the Gadget *****************/
 	/* Get the number of Gadget devices found on the PC */

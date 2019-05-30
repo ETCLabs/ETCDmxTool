@@ -133,6 +133,7 @@ public:
     QList<RdmDeviceInfo *> getDeviceInfo() { return m_infoList;}
     void handleGadgetUpdate(Gadget2_UpdateStatus status);
     virtual void setDmxEnabled(bool enabled);
+    void setDmxSpeed(unsigned int speed);
 public slots:
     void doDiscovery();
     void updateFirmware(const QString &firmwarePath);

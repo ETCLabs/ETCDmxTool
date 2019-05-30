@@ -346,6 +346,11 @@ void GadgetCaptureDevice::handleGadgetUpdate(Gadget2_UpdateStatus status)
     }
 }
 
+void GadgetCaptureDevice::setDmxSpeed(unsigned int speed)
+{
+    Gadget2_SetDmxSpeed(m_deviceNum, m_port, speed);
+}
+
 /**************************** CaptureDeviceList ****************************/
 
 CaptureDeviceList::CaptureDeviceList()

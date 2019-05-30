@@ -531,6 +531,15 @@ void MainWindow::on_btnToggleDmx_toggled(bool checked)
     }
 }
 
+void MainWindow::on_coDMXSpeed_currentIndexChanged(int value)
+{
+    GadgetCaptureDevice *device = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
+    if(device)
+    {
+        device->setDmxSpeed(static_cast<unsigned int>(value));
+    }
+}
+
 void MainWindow::modeButtonPressed(bool checked)
 {
     if(!checked) return;
