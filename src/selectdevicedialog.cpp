@@ -62,6 +62,10 @@ void SelectDeviceDialog::refreshDeviceList()
     if(devices.count() > 0)
     {
         m_dialog.listWidget->setCurrentItem(m_dialog.listWidget->item(0));
+    } else {
+#if defined(Q_OS_LINUX) || defined(Q_OS_Q_OS_OSX)
+        m_dialog.listWidget->addItem(tr("No devices found - permission issue?"));
+#endif
     }
     m_dialog.okButton->setEnabled(devices.count() > 0);
 
