@@ -28,6 +28,7 @@
 #include "whip/ftdcomm.h"
 #include <QElapsedTimer>
 #include <QProgressBar>
+#include <QComboBox>
 
 #include "dissectors.h"
 #include "packettable.h"

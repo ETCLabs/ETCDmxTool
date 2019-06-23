@@ -20,10 +20,11 @@
 
 #include "util.h"
 
-#include "RDM\estardm.h"
+#include "rdm/estardm.h"
 #include "customdataroles.h"
 
 #include <QTreeWidgetItem>
+#include <cmath>
 
 static QBrush BACKGROUND_INVALID(QColor(255, 80, 80));
 

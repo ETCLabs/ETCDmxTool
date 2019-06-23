@@ -1,4 +1,5 @@
 #include "pcapng.h"
+#include <cmath>
 
 pcapng::pcapng(void)
 {

@@ -34,13 +34,50 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += QT_DLL
 
-win32:LIBS += -l$$PWD/whip/ftd2xx -l$$PWD/gadget/GadgetDll
+# Gadget II
+    INCLUDEPATH += gadget
+    HEADERS += gadget/GadgetDLL.h
+win32 {
+    GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
+    GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
+    LIBS += -L$$$PWD/gadget -l$GadgetDll
+}
+unix {
+    SOURCES += gadget/GadgetDLL.cpp
+}
 
-INCLUDEPATH *=  \
-    src/ \
-    RDM/ \
-    whip/ \
-    gadget
+# Whip
+HEADERS +=  src/whip/ftdcomm.h
+SOURCES +=  src/whip/ftdcomm.cpp
+contains(QT_ARCH, i386) {
+    win32 {
+        INCLUDEPATH += whip/windows
+        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/i386/ftd2xx.dll))
+        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
+        CONFIG(release, debug|release): LIBS += -L$$PWD/whip/windows/i386 -lftd2xx
+        else:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/windows/i386 -lftd2xxd
+    }
+    unix {
+        INCLUDEPATH += whip/linux/libftd2xx-i386-1.4.8/release
+        LIBS += -L$$PWD/whip/linux/libftd2xx-i386-1.4.8/release/build -lftd2xx
+    }
+} else {
+    win32 {
+        INCLUDEPATH += whip/windows
+        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx.dll))
+        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
+        CONFIG(release, debug|release): LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
+        else:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/windows/amd64 -lftd2xxd
+    }
+    unix {
+        INCLUDEPATH += whip/linux/libftd2xx-x86_64-1.4.8/release
+        LIBS += -L$$PWD/whip/linux/libftd2xx-x86_64-1.4.8/release/build -lftd2xx
+    }
+}
+
+# Source
+INCLUDEPATH += src/ \
+    RDM/
 
 HEADERS += src/e110_startcodes.h \
     src/rdm/estardm.h \
@@ -48,7 +85,6 @@ HEADERS += src/e110_startcodes.h \
     src/rdm/rdmEtcConsts.h \
     src/rdm/rdmpidstrings.h \
     src/dissectors/dissectorplugin.h \
-    src/whip/ftdcomm.h \
     src/mainwindow.h \
     src/packettable.h \
     src/packetbuffer.h \
@@ -70,7 +106,6 @@ HEADERS += src/e110_startcodes.h \
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
     src/rdm/rdmpidstrings.cpp \
-    src/whip/FTDComm.cpp \
     src/mainwindow.cpp \
     src/packetbuffer.cpp \
     src/packettable.cpp \
@@ -104,12 +139,6 @@ CONFIG(release, debug|release) {
 TARGET_CUSTOM_EXT = .exe
 DEPLOY_DIR = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy))
 DEPLOY_TARGET = $$shell_quote($$system_path($${DESTDIR}/$${TARGET}$${TARGET_CUSTOM_EXT}))
-
-FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/ftd2xx.dll))
-FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-
-GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
-GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
 
 DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${DESTDIR}/dissectorplugin*.dll))
 DISSECTOR_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/dissectorplugin*.dll))
