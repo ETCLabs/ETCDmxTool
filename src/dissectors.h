@@ -61,6 +61,12 @@ public slots:
 
 private:
     QList<s_DissectorList*> m_dissectors;
+
+#if defined (Q_OS_WIN)
+    const QString disectorPatternMatch = "dissectorplugin*.dll";
+#elif defined(Q_OS_LINUX)
+    const QString disectorPatternMatch = "libdissectorplugin*.so";
+#endif
 };
 
 #endif // DISSECTORS_H
