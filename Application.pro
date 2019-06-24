@@ -40,7 +40,7 @@ DEFINES += QT_DLL
 win32 {
     GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
     GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
-    LIBS += -L$$$PWD/gadget -l$GadgetDll
+    LIBS += -L$$PWD/gadget -lGadgetDll
 }
 unix {
     SOURCES += gadget/GadgetDLL.cpp
@@ -54,8 +54,7 @@ contains(QT_ARCH, i386) {
         INCLUDEPATH += whip/windows
         FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/i386/ftd2xx.dll))
         FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-        CONFIG(release, debug|release): LIBS += -L$$PWD/whip/windows/i386 -lftd2xx
-        else:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/windows/i386 -lftd2xxd
+        LIBS += -L$$PWD/whip/windows/i386 -lftd2xx
     }
     unix {
         INCLUDEPATH += whip/linux/libftd2xx-i386-1.4.8/release
@@ -66,8 +65,7 @@ contains(QT_ARCH, i386) {
         INCLUDEPATH += whip/windows
         FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx.dll))
         FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-        CONFIG(release, debug|release): LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
-        else:CONFIG(debug, debug|release): LIBS += -L$$PWD/whip/windows/amd64 -lftd2xxd
+        LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
     }
     unix {
         INCLUDEPATH += whip/linux/libftd2xx-x86_64-1.4.8/release
