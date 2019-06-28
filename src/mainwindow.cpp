@@ -35,6 +35,7 @@
 #include <QListView>
 #include <QStandardPaths>
 #include <QDirIterator>
+#include <cmath>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"

@@ -23,7 +23,7 @@
 
 #include <QObject>
 #include <QtPlugin>
-#include "dissectors\dissectorplugin.h"
+#include "dissectors/dissectorplugin.h"
 
 class RdmPlugin : public QObject, DissectorPlugin
 {

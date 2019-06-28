@@ -65,11 +65,11 @@ class pcapng
 {
 private:
 	// Byte order magic number
-	static const quint32 pcapng::byteOrderMagic = 0x1A2B3C4D;
+    const quint32 byteOrderMagic = 0x1A2B3C4D;
 
 	// Version
-	static const quint16 majorVersion = 1;
-	static const quint16 minorVersion = 0;
+    const quint16 majorVersion = 1;
+    const quint16 minorVersion = 0;
 
 	/* alignto32bit - Align block to 32bit bounderies by padding out
 	*

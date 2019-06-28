@@ -18,9 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "FTDComm.h"
+#include "ftdcomm.h"
 #include <QString>
 #include <QFile>
+
+#define ETC_VID 0x14d5
+#define WHIP_PID 0x1003
 
 FTDComm::FTDComm(void)
 {
@@ -138,6 +141,10 @@ int FTDComm::GetNumberOfDevices()
 QList<FTDComm::FtdiDevice> FTDComm::GetUsbWhips()
 {
     QList<FTDComm::FtdiDevice> result;
+
+#if defined(Q_OS_LINUX) || defined(Q_OS_Q_OS_OSX)
+    FT_SetVIDPID(ETC_VID, WHIP_PID);
+#endif
 
     int devCount = GetNumberOfDevices();
     for (int i=0; i<devCount; ++i)
