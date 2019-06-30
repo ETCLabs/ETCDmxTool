@@ -31,6 +31,8 @@ public:
     static void setItemInvalid(QTreeWidgetItem *item);
     static void setPacketByteHighlight(QTreeWidgetItem *item, int start, int length);
 
+    static quint8 unpackU8(const Packet &p, int start);
+    static qint8 unpack8(const Packet &p, int start);
     static quint16 unpackU16(const Packet &p, int start);
     static qint16 unpack16(const Packet &p, int start);
     static unsigned int unpackU24(const Packet &p, int start);

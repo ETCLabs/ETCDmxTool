@@ -4,7 +4,7 @@ HEADERS += gadget/GadgetDLL.h
 win32 {
     GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
     GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
-    LIBS += -L$$$PWD/gadget -l$GadgetDll
+    LIBS += -L$$PWD/gadget -lGadgetDll
 }
 unix {
     SOURCES += gadget/GadgetDLL.cpp
