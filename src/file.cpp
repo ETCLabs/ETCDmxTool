@@ -23,7 +23,7 @@
 #include <QByteArray>
 
 namespace CompressedFile {
-    static int DataStreamVersion = QDataStream::Qt_5_12;
+    static int DataStreamVersion = QDataStream::Qt_5_10;
     static QString MagicHeader = "ETCDMXTool";
     typedef enum : quint16 {
         Version_0
