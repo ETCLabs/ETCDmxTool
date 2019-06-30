@@ -56,7 +56,6 @@ HEADERS += src/e110_startcodes.h \
     src/pcap/pcapng.h \
     src/pcap/pcapngLinkTypes.h \
     src/util.h \
-    src/fileopen.h \
     src/hexlineedit.h \
     src/selectdevicedialog.h \
     src/dissectors.h \
@@ -64,7 +63,10 @@ HEADERS += src/e110_startcodes.h \
     src/levelindicator.h \
     src/logmodel.h \
     src/gridwidget.h \
-    src/updatedialog.h
+    src/updatedialog.h \
+    src/commandlineparse.h \
+    src/stdout.h \
+    src/file.h
 
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
@@ -77,13 +79,15 @@ SOURCES += src/main.cpp \
     src/pcap/pcapng.cpp \
     src/util.cpp \
     src/selectdevicedialog.cpp \
-    src/fileopen.cpp \
     src/hexlineedit.cpp \
     src/dissectors.cpp \
     src/levelindicator.cpp \
     src/logmodel.cpp \
     src/gridwidget.cpp \
-    src/updatedialog.cpp
+    src/updatedialog.cpp \
+    src/commandlineparse.cpp \
+    src/stdout.cpp \
+    src/file.cpp
 
 FORMS += ui/mainwindow.ui \
     ui/selectdevicedialog.ui
