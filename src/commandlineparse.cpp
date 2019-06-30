@@ -50,13 +50,15 @@ void commandLineParse::showConsole()
 
 void commandLineParse::doSniff()
 {
-    QFileInfo fi(parser.value(optSniff));
-    if (!fi.isWritable())
+    QFile f(parser.value(optSniff));
+    QFileInfo fi(f);
+    if (!f.open(QFile::WriteOnly))
     {
-        qStdErr() << fi.absoluteFilePath() << "is not writable" << endl;
+        qStdErr() << fi.absoluteFilePath() << " is not writable" << endl;
         parseResult = ExitApp;
         return;
     }
+    f.close();
 
     parseResult = ConsoleOnly;
     auto devList = new CaptureDeviceList();
