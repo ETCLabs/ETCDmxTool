@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
     switch (cmdParse->getResult())
     {
     case commandLineParse::ExitApp: a.quit(); return 0;
-    case commandLineParse::HideGui: return a.exec();
-    case commandLineParse::ShowGui: break;
+    case commandLineParse::ConsoleOnly: return a.exec();
+    case commandLineParse::GuiOnly: break;
     }
 
     // Open GUI

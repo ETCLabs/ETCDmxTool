@@ -3,7 +3,7 @@
 #include "file.h"
 #include <QTextStream>
 #include <QDateTime>
-#include <QDebug>
+#include <QDir>
 
 commandLineParse::commandLineParse(const QCoreApplication &app, QObject *parent) : QObject(parent)
 {
@@ -21,19 +21,44 @@ commandLineParse::commandLineParse(const QCoreApplication &app, QObject *parent)
     parser.process(app);
 
     // Sniffer
-    if (parser.isSet(optSniff)) doSniff();
-
+    if (parser.isSet(optSniff))
+    {
+        showConsole();
+        doSniff();
+    }
 }
 
 commandLineParse::~commandLineParse()
-{}
+{
+#if defined(Q_OS_WIN)
+    if (pStdout) fclose(pStdout);
+    if (pStderr) fclose(pStderr);
+#endif
+}
+
+void commandLineParse::showConsole()
+{
+    // Show a console
+    #if defined(Q_OS_WIN)
+        AllocConsole();
+        AttachConsole(GetCurrentProcessId());
+
+        freopen_s(&pStdout, "CONOUT$", "w", stdout);
+        freopen_s(&pStderr, "CONOUT$", "w", stderr);
+    #endif
+}
 
 void commandLineParse::doSniff()
+{
+    QFileInfo fi(parser.value(optSniff));
+    if (!fi.isWritable())
     {
-    QString fileName = parser.value(optSniff);
-    if (fileName.isEmpty()) return;
+        qStdErr() << fi.absoluteFilePath() << "is not writable" << endl;
+        parseResult = ExitApp;
+        return;
+    }
 
-    parseResult = HideGui;
+    parseResult = ConsoleOnly;
     auto devList = new CaptureDeviceList();
     if (!devList->count())
     {
@@ -79,16 +104,9 @@ void commandLineParse::doSniff()
             }
         });
         FileSave *fileSave = new FileSave(
-                    packetTable, fileName,
+                    packetTable, fi.absoluteFilePath(),
                     parser.isSet(optCompress) ? FileSave::compressed : FileSave::original,
                     FileSave::StreamToFile);
-        if (!fileSave)
-        {
-            qStdErr() << fileName << "is not writable" << endl;
-            captureDevice->close();
-            parseResult = ExitApp;
-            return;
-        }
-
-        qStdOut() << "Sniffing direct to: " << fileName << endl;
+        if (fileSave)
+            qStdOut() << "Sniffing direct to: " << fi.absoluteFilePath() << endl;
 }

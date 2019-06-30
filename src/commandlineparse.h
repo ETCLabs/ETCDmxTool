@@ -14,8 +14,8 @@ public:
     explicit commandLineParse(const QCoreApplication &app, QObject *parent = nullptr);
     ~commandLineParse();
     enum parseResult_t {
-        ShowGui,
-        HideGui,
+        GuiOnly,
+        ConsoleOnly,
         ExitApp
     };
     parseResult_t getResult() { return parseResult; }
@@ -25,7 +25,13 @@ signals:
 public slots:
 
 private:
-    parseResult_t parseResult = ShowGui;
+    void showConsole();
+    #if defined(Q_OS_WIN)
+        FILE * pStdout = Q_NULLPTR;
+        FILE * pStderr = Q_NULLPTR;
+    #endif
+
+    parseResult_t parseResult = GuiOnly;
     QCommandLineParser parser;
 
     PacketTable packetTable;
