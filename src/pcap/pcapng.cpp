@@ -1,4 +1,5 @@
 #include "pcapng.h"
+#include <cmath>
 
 pcapng::pcapng(void)
 {
@@ -17,8 +18,7 @@ void pcapng::alignto32bit(
 {
 	while ( ( (float(block.size() - 4) / 4) ) != ( ceil( (float(block.size() - 4) / 4) )) ) {
 		// 32bit align
-		block.push_back(padValue);
-		//qDebug("Padding out...");
+        block.push_back(padValue);
 	}
 }
 

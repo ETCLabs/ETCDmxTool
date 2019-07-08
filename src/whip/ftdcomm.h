@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Ftd2xx.h"
+#include "ftd2xx.h"
 
 #include <QList>
 #include <QString>
@@ -78,7 +78,6 @@ private:
 	bool DeviceOpen;
 	int NumDevices;
 
-	QFile file;
 	void PackOutgoingBytes(unsigned char * InputBuff, unsigned char *OutputBuff, int Length);
 	int UnPackIncomingBytes(unsigned char * InputBuff, unsigned short * OutputBuff, int Length);
 };

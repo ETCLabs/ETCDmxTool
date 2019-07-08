@@ -20,10 +20,11 @@
 
 #include "util.h"
 
-#include "RDM\estardm.h"
+#include "rdm/estardm.h"
 #include "customdataroles.h"
 
 #include <QTreeWidgetItem>
+#include <cmath>
 
 static QBrush BACKGROUND_INVALID(QColor(255, 80, 80));
 
@@ -38,12 +39,34 @@ void Util::setPacketByteHighlight(QTreeWidgetItem *item, int start, int length)
     item->setData(0, DATA_ROLE_ENDOFFSET, QVariant(start + length));
 }
 
+quint8 Util::unpackU8(const Packet &p, int start)
+{
+
+    // Unpack 8 bit uint
+    quint8 result = 0;
+    if (p.size() < 1) return result;
+    result |= static_cast<quint8>((0xff&p[start]));
+
+    return result;
+}
+
+qint8 Util::unpack8(const Packet &p, int start)
+{
+    // Unpack signed 8 bit int
+    qint8 result = 0;
+    if (p.size() < 1) return result;
+    result |= static_cast<qint8>((0xff&p[start]));
+
+    return result;
+}
+
 quint16 Util::unpackU16(const Packet &p, int start)
 {
     // Unpack 16 bit uint
     quint16 result = 0;
-    result |= (quint16) (0xff&p[start])		<< 8;
-    result |= (quint16) (0xff&p[start+1]);
+    if (p.size() < 2) return result;
+    result |= static_cast<quint16>((0xff&p[start])  << 8);
+    result |= static_cast<quint16>((0xff&p[start+1])<< 0);
 
     return result;
 }
@@ -52,8 +75,9 @@ qint16 Util::unpack16(const Packet &p, int start)
 {
     // Unpack signed 16 bit int
     qint16 result = 0;
-    result |= (qint16) (0xff&p[start])		<< 8;
-    result |= (qint16) (0xff&p[start+1]);
+    if (p.size() < 2) return result;
+    result |= static_cast<qint16>((0xff&p[start])  << 8);
+    result |= static_cast<qint16>((0xff&p[start+1])<< 0);
 
     return result;
 }
@@ -62,9 +86,10 @@ unsigned int Util::unpackU24(const Packet &p, int start)
 {
     // Unpack 24 bit unsigned int
     unsigned int result = 0;
-    result |= (quint32) (0xff&p[start])   << 16;
-    result |= (quint32) (0xff&p[start+1]) << 8;
-    result |= (quint32) (0xff&p[start+2]);
+    if (p.size() < 3) return result;
+    result |= static_cast<quint32>((0xff&p[start])   << 16);
+    result |= static_cast<quint32>((0xff&p[start+1]) << 8);
+    result |= static_cast<quint32>((0xff&p[start+2]) << 0);
 
     return result;
 }
@@ -73,9 +98,10 @@ signed int Util::unpack24(const Packet &p, int start)
 {
     // Unpack 24 bit signed int
     int result = 0;
-    result |= (int) (0xff&p[start])   << 16;
-    result |= (int) (0xff&p[start+1]) << 8;
-    result |= (int) (0xff&p[start+2]);
+    if (p.size() < 3) return result;
+    result |= static_cast<int>( (0xff&p[start])   << 16);
+    result |= static_cast<int>( (0xff&p[start+1]) << 8);
+    result |= static_cast<int>( (0xff&p[start+2]) << 0);
 
     return result;
 }
@@ -84,10 +110,11 @@ quint32 Util::unpackU32(const Packet &p, int start)
 {
     // Unpack 32 bit unsigned int
     quint32 result = 0;
-    result |= (quint32) (0xff&p[start])   << 24;
-    result |= (quint32) (0xff&p[start+1]) << 16;
-    result |= (quint32) (0xff&p[start+2]) << 8;
-    result |= (quint32) (0xff&p[start+3]);
+    if (p.size() < 4) return result;
+    result |= static_cast<quint32>( (0xff&p[start])   << 24);
+    result |= static_cast<quint32>( (0xff&p[start+1]) << 16);
+    result |= static_cast<quint32>( (0xff&p[start+2]) << 8);
+    result |= static_cast<quint32>( (0xff&p[start+3]) << 0);
 
     return result;
 }
@@ -96,10 +123,11 @@ qint32 Util::unpack32(const Packet &p, int start)
 {
     // Unpack 32 bit signed int
     qint32 result = 0;
-    result |= (qint32) (0xff&p[start])   << 24;
-    result |= (qint32) (0xff&p[start+1]) << 16;
-    result |= (qint32) (0xff&p[start+2]) << 8;
-    result |= (qint32) (0xff&p[start+3]);
+    if (p.size() < 4) return result;
+    result |= static_cast<qint32>((0xff&p[start])   << 24);
+    result |= static_cast<qint32>((0xff&p[start+1]) << 16);
+    result |= static_cast<qint32>((0xff&p[start+2]) << 8);
+    result |= static_cast<qint32>((0xff&p[start+3]) << 0);
 
     return result;
 }

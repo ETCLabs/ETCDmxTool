@@ -18,6 +18,9 @@
         <file>add_btn.png</file>
         <file>remove_btn.png</file>
         <file>controller_off.png</file>
+        <file>dmxgrid_dis.png</file>
+        <file>dmxgrid_en.png</file>
+        <file>dmxgrid_off.png</file>
     </qresource>
     <qresource prefix="/">
         <file alias="estaid.csv">estaid.csv</file>

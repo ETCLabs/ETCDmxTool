@@ -18,10 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "RDMDissector.h"
+#include "rdmdissector.h"
 
 #include <QTreeWidgetItem>
-#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>

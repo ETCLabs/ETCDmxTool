@@ -25,9 +25,8 @@
 #include <QTreeWidget>
 #include <QList>
 #include <QLibrary>
-#include <QDebug>
 #include "packetbuffer.h"
-#include "dissectors\dissectorplugin.h"
+#include "dissectors/dissectorplugin.h"
 
 class dissectors : public QObject
 {
@@ -42,7 +41,6 @@ public:
         DissectorPlugin* dissector;
         bool isEnabled() { return m_enabled; }
         void setEnabled(bool enabled = true) {
-            qDebug() << dissector->getProtocolName() << "Enabled:" << enabled;
             m_enabled = enabled;
         }
 
@@ -63,6 +61,12 @@ public slots:
 
 private:
     QList<s_DissectorList*> m_dissectors;
+
+#if defined (Q_OS_WIN)
+    const QString disectorPatternMatch = "dissectorplugin*.dll";
+#elif defined(Q_OS_LINUX)
+    const QString disectorPatternMatch = "libdissectorplugin*.so";
+#endif
 };
 
 #endif // DISSECTORS_H

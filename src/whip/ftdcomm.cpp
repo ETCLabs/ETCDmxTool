@@ -18,10 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "FTDComm.h"
+#include "ftdcomm.h"
 #include <QString>
 #include <QFile>
-#include <qdebug.h>
+
+#define ETC_VID 0x14d5
+#define WHIP_PID 0x1003
 
 FTDComm::FTDComm(void)
 {
@@ -50,8 +52,6 @@ FTDCommError FTDComm::Open(int DeviceNum)
 				{
 					DeviceOpen = true;
 					Result = FTDCOMM_OK;
-					file.setFileName("LogFile.txt");
-					file.open(QIODevice::WriteOnly);
 				}
 			}
 			else
@@ -86,7 +86,6 @@ FTDCommError FTDComm::Close()
 		{
 			DeviceOpen = false;
 			Result = FTDCOMM_OK;
-			file.close();
 		}
 	}
 	else
@@ -143,6 +142,10 @@ QList<FTDComm::FtdiDevice> FTDComm::GetUsbWhips()
 {
     QList<FTDComm::FtdiDevice> result;
 
+#if defined(Q_OS_LINUX) || defined(Q_OS_Q_OS_OSX)
+    FT_SetVIDPID(ETC_VID, WHIP_PID);
+#endif
+
     int devCount = GetNumberOfDevices();
     for (int i=0; i<devCount; ++i)
     {
@@ -194,7 +197,7 @@ FTDCommError FTDComm::SendData(unsigned char * Data, int DataLength)
 		{
 			Result = FTDCOMM_OK;
 		}
-		delete PackedData;
+        delete[] PackedData;
 	}
 	return Result;
 }
@@ -208,26 +211,8 @@ FTDCommError FTDComm::SendBreakStartAndData(unsigned char StartCode, unsigned ch
 		{
 			if(SendData(&StartCode, 1) == FTDCOMM_OK)
 			{
-				QString Str = "";
-				QString Addr;
 				Result = SendData(Data, DataLength);
 				SendHoldOff();
-				if(file.isOpen())
-				{
-					Str.sprintf("\r\nTX - BREAK ");
-                    file.write(Str.toLatin1());
-					
-					Str.sprintf("%02X ", StartCode);
-                    file.write(Str.toLatin1());
-
-					for(int Index = 0; Index < DataLength; Index++)
-					{
-						Str.sprintf("%02X ", Data[Index]);
-                        file.write(Str.toLatin1());
-					}
-					//Str.sprintf("\r\n");
-                    //file.write(Str.toLatin1());
-				}
 			}
 		}
 	}
@@ -281,27 +266,11 @@ int FTDComm::ReceiveData(unsigned short * Data, DWORD MaxLength)
 				if(FT_Read(DeviceHandle, PackedData, RXBytes, &RXBytes) == FT_OK)
                 {
 					BytesReceived = UnPackIncomingBytes(PackedData, Data, RXBytes);
-					for(int Index = 0; Index < BytesReceived; Index++)
-					{
-						QString Str;
-						if(Data[Index] == 0xBB00)
-						{
-							Str.sprintf("\r\nRX - BREAK ");
-                            file.write(Str.toLatin1());
-						}
-						else
-						{
-							Str.sprintf("%02X ", Data[Index]);
-                            file.write(Str.toLatin1());
-						}
-
-					}
-
 				}
 			}
 		}
 	}
-	delete PackedData;
+    delete[] PackedData;
 	return BytesReceived;
 }
 

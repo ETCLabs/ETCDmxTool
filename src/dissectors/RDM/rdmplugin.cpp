@@ -24,7 +24,6 @@
 #include "util.h"
 #include <QList>
 #include <QTreeWidgetItem>
-#include <QDebug>
 
 #include "rdmdissector.h"
 
@@ -32,6 +31,11 @@
 QVariant RdmPlugin::getProtocolName()
 {
     return "RDM";
+}
+
+bool RdmPlugin::enableByDefault()
+{
+    return true;
 }
 
 QList<quint8> RdmPlugin::getStartCodes()

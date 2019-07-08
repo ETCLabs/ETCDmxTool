@@ -28,6 +28,7 @@
 #include "whip/ftdcomm.h"
 #include <QElapsedTimer>
 #include <QProgressBar>
+#include <QComboBox>
 
 #include "dissectors.h"
 #include "packettable.h"
@@ -51,16 +52,15 @@ public:
 
 public slots:
     void readData();
-	void on_actionStart_Capture_toggled(bool checked);
-    void on_actionStop_Capture_triggered();
-    void on_actionRestart_Capture_triggered();
     void on_actionSave_File_triggered();
     void on_actionOpen_File_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
+    void on_actionViewLog_triggered();
+    void on_actionUpdateGadget_triggered();
 	void on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_actionExport_to_PcapNg_triggered();
-    void modeButtonPressed();
+    void modeButtonPressed(bool checked);
     void on_twRdmDevices_currentItemChanged( QTreeWidgetItem * current, QTreeWidgetItem * previous);
     void on_tbDmxStartPrev_pressed();
     void on_tbDmxStartNext_pressed();
@@ -70,6 +70,10 @@ public slots:
     void on_tbRemoveRawCmdData_pressed();
     void on_btnSendCustomRDM_pressed();
     void timestampDisplayChanged();
+    void logCategoryToggle(bool checked);
+    void logSeverityToggle(bool checked);
+    void on_tbSaveLog_pressed();
+    void on_btnToggleDmx_toggled(bool checked);
 private slots:
     void updateFilterString(const QString &filterText);
 	void setFilterColumn(int index);
@@ -90,6 +94,11 @@ private slots:
     void setupRawDataEditor(int datatype, int row);
     void composeRawCommand();
     void rawCommandComplete(quint8 response, const QByteArray &data);
+
+private:
+    Q_SIGNAL void updateStatusBarMsg();
+    Q_SLOT void doUpdatetStatusBarMsg();
+
 protected:
     virtual void resizeEvent(QResizeEvent *e);
 private:
@@ -123,6 +132,15 @@ private:
         RDMSENSORCOL_NORMMAX,
         RDMSENSORCOL_RECVALUE,
         RDMSENSORCOLCOUNT
+    };
+
+    // Should correspond to the stacked widget indices
+    enum OperationMode
+    {
+        OPMODE_SNIFFER = 0,
+        OPMODE_DMXCONTROL,
+        OPMODE_RDMCONTROL,
+        OPMODE_DMXVIEW
     };
 
     Ui::MainWindowClass ui;
@@ -174,6 +192,7 @@ private:
     QComboBox *m_commandCombo;
     QComboBox *m_paramCombo;
     QSpinBox *m_subDeviceSpin;
+    OperationMode m_mode = OPMODE_SNIFFER;
 };
 
 #endif // MAINWINDOW_H

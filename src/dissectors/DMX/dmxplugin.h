@@ -23,7 +23,7 @@
 
 #include <QObject>
 #include <QtPlugin>
-#include "dissectors\dissectorplugin.h"
+#include "dissectors/dissectorplugin.h"
 
 class DmxPlugin : public QObject, DissectorPlugin
 {
@@ -33,6 +33,7 @@ class DmxPlugin : public QObject, DissectorPlugin
 
 public:
     QVariant getProtocolName() override;
+    bool enableByDefault() override;
     QList<quint8> getStartCodes() override;
     QVariant getSource(const Packet &p) override;
     QVariant getDestination(const Packet &p) override;

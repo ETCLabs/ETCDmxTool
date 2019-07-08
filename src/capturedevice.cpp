@@ -26,14 +26,16 @@
 
 #include <QThread>
 #include <QTimer>
-#include <QDebug>
+#include <QDir>
+#include "logmodel.h"
 
 /******************************************** ICaptureDevice *****************************/
 
-ICaptureDevice::ICaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info)
+ICaptureDevice::ICaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) :
+    m_mode(SniffMode),
+    m_info(info),
+    m_deviceOpen(false)
 {
-    m_mode = SniffMode;
-    m_info = info;
     memset(m_txLevels, 0,  sizeof(m_txLevels));
 }
 
@@ -64,17 +66,19 @@ void ICaptureDevice::setDmxLevels(quint8 *levels, size_t length)
 
 /************************************** WhipCaptureDevice ********************************/
 
-WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info)
+WhipCaptureDevice::WhipCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info),
+    m_rxTimer(Q_NULLPTR),
+    m_comm(new FTDComm)
 {
-    m_comm = new FTDComm;
     m_deviceNum = static_cast<int>(info.index);
-    m_rxTimer = Q_NULLPTR;
 }
 
 bool WhipCaptureDevice::open()
 {
     FTDCommError Result = m_comm->Open(m_deviceNum);
-    qDebug() << "Opening device " << m_deviceNum;
+    LogModel::log(QString("Opening USB whip device %1").arg(m_deviceNum),
+                  CDL_SEV_INF,
+                  1);
 
     if(Result != FTDCOMM_OK)
         return false;
@@ -83,7 +87,9 @@ bool WhipCaptureDevice::open()
     if(Result != FTDCOMM_OK)
         return false;
 
-    qDebug() << "Starting Whip RX Timer, devnum" << m_deviceNum;
+    LogModel::log(QString("Starting Whip RX Timer for device %1").arg(m_deviceNum),
+                  CDL_SEV_INF,
+                  1);
 
     if(!m_rxTimer)
     {
@@ -92,12 +98,16 @@ bool WhipCaptureDevice::open()
         m_rxTimer->start(100);
     }
 
+    m_deviceOpen = true;
+    emit sniffing();
     return true;
 }
 
 void WhipCaptureDevice::close()
 {
     m_comm->Close();
+    m_deviceOpen = false;
+    emit closed();
 }
 
 
@@ -127,7 +137,7 @@ void WhipCaptureDevice::onTimer()
         if(length>0)
             emit packetsReady();
     }
-    else
+    else if(m_enabled)
     {
         m_listMutex.lock();
         m_comm->SendBreakStartAndData(0, m_txLevels, 512);
@@ -139,6 +149,13 @@ void WhipCaptureDevice::onTimer()
 
 /***************************** GadgetCaptureDevice ****************************************/
 
+void __stdcall GadgetUpdateCallback(Gadget2_UpdateStatus status, void* context)
+{
+    GadgetCaptureDevice *device = static_cast<GadgetCaptureDevice *>(context);
+    device->handleGadgetUpdate(status);
+}
+
+
 GadgetCaptureDevice::GadgetCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info) : ICaptureDevice(info)
 {
     m_deviceNum = m_info.index;
@@ -148,6 +165,7 @@ GadgetCaptureDevice::GadgetCaptureDevice(const CaptureDeviceList::CaptureDeviceI
     this->moveToThread(m_gadgetReadThread);
 
     Gadget2_Connect();
+    Gadget2_SetUpdateStatusCallback(GadgetUpdateCallback, static_cast<void*>(this));
     m_gadgetReadThread->start();
 }
 
@@ -165,7 +183,9 @@ void GadgetCaptureDevice::readData()
     {
         quint16* buffer = new quint16[numBytes];
         Gadget2_GetRXRawBytes(m_deviceNum, m_port, buffer, numBytes);
-        qDebug() << "Got " << numBytes << " bytes";
+        LogModel::log(QString("Gadget received %1 bytes").arg(numBytes),
+                      CDL_SEV_INF,
+                      5);
 
         for(unsigned int i = 0; i < numBytes; ++i)
         {
@@ -188,11 +208,19 @@ void GadgetCaptureDevice::readData()
 
 bool GadgetCaptureDevice::open()
 {
-    if(m_mode==ICaptureDevice::SniffMode)
-        QMetaObject::invokeMethod(this, "startReading");
-    if(m_mode==ICaptureDevice::TransmitMode)
-        QMetaObject::invokeMethod(this, "startSending");
-    return true;
+    switch (m_mode)
+    {
+        case ICaptureDevice::SniffMode:
+            QMetaObject::invokeMethod(this, "startReading");
+            return true;
+        case ICaptureDevice::TransmitMode:
+            QMetaObject::invokeMethod(this, "startSending");
+            return true;
+        case ICaptureDevice::ControllerMode:
+            emit transmitting();
+            return true;
+    }
+    return false;
 }
 
 void GadgetCaptureDevice::startReading()
@@ -202,6 +230,9 @@ void GadgetCaptureDevice::startReading()
     m_rxTimer->setInterval(0);
     connect(m_rxTimer, SIGNAL(timeout()), this, SLOT(readData()));
     m_rxTimer->start();
+
+    m_deviceOpen = true;
+    emit sniffing();
 }
 
 void GadgetCaptureDevice::startSending()
@@ -210,6 +241,9 @@ void GadgetCaptureDevice::startSending()
     m_rxTimer->setInterval(100);
     connect(m_rxTimer, SIGNAL(timeout()), this, SLOT(sendData()));
     m_rxTimer->start();
+
+    m_deviceOpen = true;
+    emit transmitting();
 }
 
 void GadgetCaptureDevice::stopSending()
@@ -221,13 +255,23 @@ void GadgetCaptureDevice::stopSending()
         m_rxTimer = Q_NULLPTR;
     }
     Gadget2_DisableDMX(m_deviceNum, m_port);
+
+    m_deviceOpen = false;
+    emit closed();
 }
 
 void GadgetCaptureDevice::sendData()
 {
-    Gadget2_SendDMX(m_deviceNum, m_port, m_txLevels, 512);
+    if(m_enabled)
+        Gadget2_SendDMX(m_deviceNum, m_port, m_txLevels, 512);
 }
 
+void GadgetCaptureDevice::setDmxEnabled(bool enabled)
+{
+    m_enabled = enabled;
+    if(!enabled)
+        Gadget2_DisableDMX(m_deviceNum, m_port);
+}
 
 void GadgetCaptureDevice::stopReading()
 {
@@ -248,7 +292,7 @@ void GadgetCaptureDevice::close()
 
 void GadgetCaptureDevice::doDiscovery()
 {
-    Gadget2_StartDiscovery(m_deviceNum, m_port);
+    Gadget2_DoFullDiscovery(m_deviceNum, m_port);
     QTimer::singleShot(15000, this, SLOT(discoveryFinished()));
 }
 
@@ -262,6 +306,45 @@ void GadgetCaptureDevice::discoveryFinished()
 }
 
 
+void GadgetCaptureDevice::updateFirmware(const QString &firmwarePath)
+{
+    if(QThread::currentThread() == this->thread())
+    {
+        QString nativePath = QDir::toNativeSeparators(firmwarePath);
+        wchar_t *filename = new wchar_t[nativePath.length() + 1];
+        wmemset(filename, 0, nativePath.length() + 1);
+        nativePath.toWCharArray(filename);
+        Gadget2_PerformFirmwareUpdate(m_deviceNum, filename);
+        delete[] filename;
+    }
+    else {
+        QMetaObject::invokeMethod(this, "updateFirmware", Q_ARG(QString, firmwarePath));
+    }
+}
+
+void GadgetCaptureDevice::handleGadgetUpdate(Gadget2_UpdateStatus status)
+{
+    switch(status)
+    {
+    case Gadget2_Update_Beginning:
+        emit updateProgressText(tr("Beginning Gadget2 Update - setting device into Bootloader"));
+        break;
+    case Gadget2_Update_BootloaderFound:
+        emit updateProgressText(tr("Found Gadget2 in Bootloader mode"));
+        break;
+    case Gadget2_Update_TransferringFile:
+        emit updateProgressText(tr("Transferring update file to Gadget2"));
+        break;
+    case Gadget2_Update_ReadyForReboot:
+        emit updateProgressText(tr("Gadget2 update Complete. Please power cycle the device and retstart the appliction. ETCDMXTool will now exit"));
+        emit updateComplete();
+        break;
+    case Gadget2_Update_Error:
+        emit updateProgressText(tr("Gadget2 update failed. Please power cycle the device, restart the appliction, and try again. ETCDMXTool will now exit"));
+        emit updateComplete();
+        break;
+    }
+}
 
 /**************************** CaptureDeviceList ****************************/
 
@@ -277,20 +360,30 @@ CaptureDeviceList::CaptureDeviceList()
         {
             // Assume two ports per gadget
             // TODO IO cards with more ports..
-            for(unsigned int port=1; port<=2; port++)
+            for(unsigned int port=1; port<=Gadget2_GetPortCount(i); port++)
             {
                 unsigned char * version = Gadget2_GetGadgetVersion(i);
                 unsigned int serial = Gadget2_GetGadgetSerialNumber(i);
+                const char *deviceType = Gadget2_GetGadgetType(i);
 
                 CaptureDeviceInfo info;
                 info.type = DEVTYPE_GADGET;
                 info.index = i;
                 info.port = port;
-                info.description = QString("Gadget S/N %1 (v%2) - Port %3")
+                info.description = QString("%1 S/N %2 (v%3) - Port %4")
+                        .arg(deviceType)
                         .arg(serial)
                         .arg(reinterpret_cast<char*>(version))
                         .arg(port);
-                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER | CAPABILITY_SNIFFER;
+                info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER;
+                // Only Gadget2 v1.2 and above can sniff...
+                if (
+                        QString(deviceType)==QString("Gadget 2") &&
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.0.") &&
+                        !QString(reinterpret_cast<char*>(version)).startsWith("1.1.")
+                    ) {
+                    info.deviceCapabilities |= CAPABILITY_SNIFFER;
+                }
                 m_devList << info;
             }
         }

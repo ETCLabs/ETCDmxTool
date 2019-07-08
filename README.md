@@ -1,4 +1,6 @@
 # ETCDmxTool
+[![Build status](https://ci.appveyor.com/api/projects/status/406b2wcp87ala2o9?svg=true)](https://ci.appveyor.com/project/docsteer/etcdmxtool)
+
 ETCDmxTool is a free, open-source tool with the ability to capture DMX/RDM data; to control DMX levels; and to act as an RDM controller. It is provided by ETC Inc without any warranty, in the hope that it is a useful tool.
 
 # Supported Platforms and DMX Devices
@@ -8,7 +10,7 @@ To interface to a DMX/RDM system, it supports two USB devices - the ETC Gadget2 
 
 | Feature              | USB Whip | Gadget2                             |
 |----------------------|----------|-------------------------------------|
-| DMX/RDM Data Capture | Yes      | Yes (Needs Firmware 1.4.0 or above) |
+| DMX/RDM Data Capture | Yes      | Yes (Needs Firmware 1.2.0 or above) |
 | DMX Output           | Yes      | Yes                                 |
 | RDM Controller       | No       | Yes                                 |
 
@@ -28,3 +30,7 @@ If you are interested in building the application you will need the following:
 	* If NSIS is included in your $PATH the installer will be built automatically
 
 The dissectors are arranged as plugins; additional dissectors can simply be added to the src/dissectors directory
+
+# About this ETCLabs Project
+
+ETCDmxTool is designed to interact with ETC products, but it is not official ETC software. For challenges using, integrating, compiling, or modifying items in this project, we encourage posting on the Issues page. ETCDmxTool is a community-supported initiative, and the community is the best place to ask for help!

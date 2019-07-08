@@ -24,6 +24,7 @@
 namespace E110_SC {
     enum  {
         DIMMER_DATA = 0x00,
+        ASCII_TEXT = 0x17,
         RDM = 0xCC,
         RDM_DSC_RESPONSE = 0xFE,
 

@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QHash>
 #include "capturedevice.h"
+#include "logmodel.h"
 
 class RDM_CmdC;
 
@@ -82,8 +83,8 @@ public:
     RDMSensorValueList getSensorValues(quint32 deviceId);
     void executeCustomCommand(RDM_CmdC *command);
 signals:
+    void discoveryStarted();
     void discoveryFinished();
-    void log(const QString &message);
     void gotSensorValues();
     void customCommandComplete(quint8 response, const QByteArray &data);
 public slots:

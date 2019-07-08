@@ -30,6 +30,11 @@ QVariant DmxPlugin::getProtocolName()
     return "DMX";
 }
 
+bool DmxPlugin::enableByDefault()
+{
+    return true;
+}
+
 QList<quint8> DmxPlugin::getStartCodes()
 {
     QList<quint8> startCodes;

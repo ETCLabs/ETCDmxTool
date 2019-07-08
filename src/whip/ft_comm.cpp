@@ -1,7 +1,7 @@
 // FT_Comm.cpp : implementation file
 //
 
-#include <QDebug>
+#include "logmodel.h"
 #include "FT_Comm.h"
 
 
@@ -79,7 +79,9 @@ FT_STATUS FT_Comm::OpenBy(const QString &csDeviceName)
 	   {
 			if(csDeviceName.length() > 2)//no Open() method selected...
 			{
-				qDebug() << "No Open Method Selected";
+                                LogModel::log("Whip: No Open Method Selected",
+                                                      CDL_SEV_ERR,
+                                                      1);
 				return FT_DEVICE_NOT_OPENED;
 			}
 
@@ -89,7 +91,9 @@ FT_STATUS FT_Comm::OpenBy(const QString &csDeviceName)
 			x = atoi(str);
 			if((x<0) || (x>64))
 			{
-				qDebug() << "Invalid number";
+                                LogModel::log("Invalid number",
+                                              CDL_SEV_ERR,
+                                              1);
 				return FT_DEVICE_NOT_OPENED; 
 			}
 			status = Open((PVOID)x);

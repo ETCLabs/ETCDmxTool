@@ -22,7 +22,6 @@
 
 #include <QTimer>
 #include <QMessageBox>
-#include <QDebug>
 #include <QFileDialog>
 #include <QComboBox>
 #include <QLabel>
@@ -33,6 +32,10 @@
 #include <QLineEdit>
 #include <QSignalMapper>
 #include <QDateTime>
+#include <QListView>
+#include <QStandardPaths>
+#include <QDirIterator>
+#include <cmath>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -42,6 +45,7 @@
 #include "capturedevice.h"
 #include "customdataroles.h"
 #include "levelindicator.h"
+#include "updatedialog.h"
 
 // PcapNg Export
 #include "pcap/pcapng.h"
@@ -52,6 +56,9 @@
 #include "rdm/rdmpidstrings.h"
 #include "etc_include/RDM_CmdC.h"
 #include "GadgetDLL.h"
+
+// Logging
+#include "logmodel.h"
 
 #include "util.h"
 
@@ -86,7 +93,7 @@ QString prettifyHex(const QByteArray &data)
         QString text = QString("%1 ").arg(line, 4, 16, QChar('0')).toUpper();
         for(int i=0; i<16; i++)
             if(line+i<data.length())
-                text.append(QString(" %1").arg((unsigned char) data[line+i], 2, 16, QChar('0')).toUpper());
+                text.append(QString(" %1").arg(static_cast<unsigned char>( data[line+i]), 2, 16, QChar('0')).toUpper());
 
         // Fill out the last line
         if(text.length() < 52)
@@ -123,6 +130,12 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     ui.toolBar->setParent(ui.centralWidget);
     ui.snifferToolsLayout->addWidget(ui.toolBar);
 
+    if(!captureDevice)
+        LogModel::log(tr("Starting up, offline mode"), CDL_SEV_INF, 1);
+    else {
+        LogModel::log(tr("Starting up, using device %1").arg(captureDevice->description()), CDL_SEV_INF, 1);
+    }
+
 
     // Setup the RDM controller. Currently supported by Gadget2 only, and if in offline mode
     GadgetCaptureDevice *gadgetDevice = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
@@ -130,7 +143,13 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     if(gadgetDevice)
     {
         m_controller = new RDMController(gadgetDevice, this);
-        connect(m_controller, SIGNAL(log(QString)), ui.teRdmControlLog, SLOT(appendPlainText(QString)));
+        connect(m_controller, &RDMController::discoveryStarted, [this] {
+            ui.twRdmDevices->clear();
+            ui.rdmProgressBar->setVisible(true);
+            ui.rdmProgressBar->setMinimum(0);
+            ui.rdmProgressBar->setMaximum(0);
+            emit updateStatusBarMsg();
+        });
         connect(m_controller, SIGNAL(discoveryFinished()), this, SLOT(gotDiscoveryData()));
         connect(m_controller, SIGNAL(gotSensorValues()), this, SLOT(updateRdmDisplay()));
         connect(m_controller, SIGNAL(customCommandComplete(quint8, QByteArray)), this, SLOT(rawCommandComplete(quint8, QByteArray)));
@@ -140,25 +159,79 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
         ui.tbController->setEnabled(false);
     }
 
+    ui.actionUpdateGadget->setEnabled(gadgetDevice!=Q_NULLPTR);
+
     if(m_captureDevice)
     {
         ui.statusBar->addPermanentWidget(new QLabel(tr("Using device %1").arg(m_captureDevice->description()),
                                                        this));
         connect(m_captureDevice, SIGNAL(packetsReady()), this, SLOT(readData()));
         connect(m_captureDevice, SIGNAL(discoveryDataReady()), this, SLOT(gotDiscoveryData()));
+
+        // Status Bar
+        connect(this, &MainWindow::updateStatusBarMsg, this, &MainWindow::doUpdatetStatusBarMsg);
+
+        // Capture mode changes
+        ui.actionStart_Capture->setChecked(false);
+        ui.actionStart_Capture->setEnabled(m_captureDevice->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER);
+        ui.actionStop_Capture->setEnabled(false);
+        ui.actionRestart_Capture->setEnabled(false);
+
+        connect(m_captureDevice, &ICaptureDevice::sniffing, this, [=] {
+            ui.actionStart_Capture->setChecked(true);
+            ui.actionStart_Capture->setEnabled(true);
+            ui.actionStop_Capture->setEnabled(true);
+            ui.actionRestart_Capture->setEnabled(true);
+
+            emit updateStatusBarMsg();
+        },
+        Qt::QueuedConnection);
+
+        connect(m_captureDevice, &ICaptureDevice::closed, this, [=] {
+            ui.actionStart_Capture->setChecked(false);
+            ui.actionStart_Capture->setEnabled((m_captureDevice->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER));
+            ui.actionStop_Capture->setEnabled(false);
+            ui.actionRestart_Capture->setEnabled(false);
+
+            emit updateStatusBarMsg();
+        },
+        Qt::QueuedConnection);
+
+        connect(m_captureDevice, &ICaptureDevice::transmitting, this, [=] {
+            ui.actionStart_Capture->setChecked(false);
+            ui.actionStart_Capture->setEnabled(false);
+            ui.actionStop_Capture->setEnabled(false);
+            ui.actionRestart_Capture->setEnabled(false);
+
+            emit updateStatusBarMsg();
+        },
+        Qt::QueuedConnection);
+
+        // Capture mode buttons
+        connect(ui.actionStart_Capture, &QAction::triggered, [this]() {
+            if (m_captureDevice->isOpen() && m_captureDevice->getMode() == ICaptureDevice::SniffMode)
+                stopCapture();
+            else
+                startCapture();
+        });
+        connect(ui.actionStop_Capture, &QAction::triggered, [this]() { stopCapture(); });
+        connect(ui.actionRestart_Capture, &QAction::triggered, [this]() {
+           stopCapture();
+           startCapture();
+        });
     }
     else
     {
         ui.statusBar->addPermanentWidget(new QLabel(tr("Working Offline"), this));
     }
 
-    ui.actionStop_Capture->setEnabled(false);
-	ui.actionRestart_Capture->setEnabled(false);
+
     ui.tbSniffer->setChecked(true);
 
-    connect(ui.tbController,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbSniffer,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
-    connect(ui.tbTxMode,    SIGNAL(toggled(bool)), this, SLOT(modeButtonPressed()));
+    connect(ui.tbController,    SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbSniffer,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbTxMode,        SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbDmxView,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
 
     // Packet table
     // Filtering model
@@ -299,6 +372,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     btnGroup->addButton(ui.tbController);
     btnGroup->addButton(ui.tbSniffer);
     btnGroup->addButton(ui.tbTxMode);
+    btnGroup->addButton(ui.tbDmxView);
     btnGroup->setExclusive(true);
 
     // Setup Custom PID
@@ -341,13 +415,81 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     connect(ui.actionSecondsSinceBeginning, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
     connect(ui.actionSecondsSincePrevious, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
 
+
+    // Logging
+    ui.lvLog->setModel(LogModel::getInstance());
+    connect(ui.lvLog->model(), SIGNAL(rowsInserted(QModelIndex,int,int)),
+            ui.lvLog, SLOT(scrollToBottom()));
+    ui.dwLogging->close();
+
+    ui.sbLogVerbosity->setMinimum(CDL_VERB_MIN);
+    ui.sbLogVerbosity->setMaximum(CDL_VERB_MAX);
+    ui.sbLogVerbosity->setValue(LogModel::getInstance()->getVerbosityFilter());
+    connect(ui.sbLogVerbosity, SIGNAL(valueChanged(int)), LogModel::getInstance(), SLOT(setVerbosityFilter(int)));
+
+    QMenu *categoryMenu = new QMenu(this);
+    QMapIterator<int, QString> i(CDL_CAT_STRINGS);
+    while(i.hasNext())
+    {
+        i.next();
+        QAction *a = categoryMenu->addAction(i.value());
+        a->setData(QVariant(i.key()));
+        a->setCheckable(true);
+        a->setChecked(LogModel::getInstance()->getCategoryFilter() & i.key());
+        connect(a, SIGNAL(toggled(bool)), this, SLOT(logCategoryToggle(bool)));
+    }
+    ui.tbCategory->setMenu(categoryMenu);
+
+    QMenu *severityMenu = new QMenu(this);
+    i = QMapIterator<int, QString>(CDL_SEV_STRINGS);
+    while(i.hasNext())
+    {
+        i.next();
+        QAction *a = severityMenu->addAction(i.value());
+        a->setData(QVariant(i.key()));
+        a->setCheckable(true);
+        a->setChecked(LogModel::getInstance()->getSeverityFilter() & i.key());
+        connect(a, SIGNAL(toggled(bool)), this, SLOT(logSeverityToggle(bool)));
+    }
+    ui.tbSeverity->setMenu(severityMenu);
+    emit updateStatusBarMsg();
 }
 
 MainWindow::~MainWindow()
+{}
+
+void MainWindow::doUpdatetStatusBarMsg()
 {
+    QString statusStr = tr("Unknown");
+    if (m_captureDevice)
+    {
+        if (m_captureDevice->isOpen())
+        {
+            switch (m_captureDevice->getMode())
+            {
+                case ICaptureDevice::SniffMode:
+                    statusStr = tr("Capturing...");
+                    break;
+                case ICaptureDevice::TransmitMode:
+                    statusStr = tr("Transmiter running...");
+                    break;
+                case ICaptureDevice::ControllerMode:
+                    statusStr = tr("Controller running...");
+                    break;
+            }
+        } else {
+            statusStr = tr("Not active");
+        }
+    }
 
+    if (m_controller)
+    {
+        if (ui.stackedWidget->currentIndex() == 2)
+            statusStr = tr("Controller running...");
+    }
+
+    ui.statusBar->showMessage(statusStr);
 }
-
 
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
@@ -366,79 +508,99 @@ void MainWindow::faderMoved(int value)
     if((index = m_scene1sliders.indexOf(slider)) > -1)
     {
         scene = 1;
-        m_scene1Levels[index + ui.sbDmxStart->value() - 1] = value;
+        m_scene1Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
     if((index = m_scene2sliders.indexOf(slider)) > -1)
     {
         scene = 2;
-        m_scene2Levels[index + ui.sbDmxStart->value() - 1] = value;
+        m_scene2Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
 
     updateTxLevels();
-
 }
 
-void MainWindow::modeButtonPressed()
+void MainWindow::on_btnToggleDmx_toggled(bool checked)
 {
+    if(checked)
+    {
+        ui.btnToggleDmx->setText(tr("Enable DMX"));
+        if(m_captureDevice) m_captureDevice->setDmxEnabled(false);
+    }
+    else {
+        ui.btnToggleDmx->setText(tr("Disable DMX"));
+        if(m_captureDevice) m_captureDevice->setDmxEnabled(true);
+    }
+}
+
+void MainWindow::modeButtonPressed(bool checked)
+{
+    if(!checked) return;
+
     QToolButton *button = dynamic_cast<QToolButton *>(sender());
     if(!button) return;
-    int index = 0;
 
     if(button==ui.tbSniffer)
-        index = 0;
+        m_mode = OPMODE_SNIFFER;
     if(button == ui.tbTxMode)
-        index = 1;
+        m_mode = OPMODE_DMXCONTROL;
     if(button == ui.tbController)
-        index = 2;
+        m_mode = OPMODE_RDMCONTROL;
+    if(button == ui.tbDmxView)
+        m_mode = OPMODE_DMXVIEW;
 
-    ui.stackedWidget->setCurrentIndex(index);
+    ui.stackedWidget->setCurrentIndex(m_mode);
 
+    stopCapture();
 
-
-    switch(index)
+    switch(m_mode)
     {
-    case 0: // Sniffer mode
+    case OPMODE_SNIFFER: // Sniffer mode
         ui.actionSave_File->setEnabled(true);
         ui.actionOpen_File->setEnabled(true);
         ui.actionExport_to_PcapNg->setEnabled(true);
         ui.menuCapture->setEnabled(true);
         if(m_captureDevice)
         {
-            m_captureDevice->close();
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
         }
+        LogModel::log(tr("Switched to Sniffer Mode"), CDL_SEV_INF, 1);
         break;
-    case 1: // DMX Sender Mode
+    case OPMODE_DMXCONTROL: // DMX Sender Mode
         ui.actionSave_File->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
-        stopCapture();
         if(m_captureDevice)
         {
-            m_captureDevice->close();
             // Start transmitting on entry to screen
             m_captureDevice->setMode(ICaptureDevice::TransmitMode);
             m_captureDevice->open();
         }
+
+        LogModel::log(tr("Switched to DMX Transmit Mode"), CDL_SEV_INF, 1);
         break;
-    case 2:
+    case OPMODE_RDMCONTROL: // RDM Controller Mode
         ui.menuCapture->setEnabled(false);
         ui.actionSave_File->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
         ui.twRdmController->setCurrentIndex(0);
-        stopCapture();
+        // Auto start discovery
+        if (m_controller) m_controller->startDiscovery();
+        LogModel::log(tr("Switched to RDM Controller Mode"), CDL_SEV_INF, 1);
+        break;
+    case OPMODE_DMXVIEW: // DMX View Mode
+        ui.menuCapture->setEnabled(false);
+        ui.actionSave_File->setEnabled(false);
+        ui.actionOpen_File->setEnabled(false);
+        ui.actionExport_to_PcapNg->setEnabled(false);
+        ui.menuCapture->setEnabled(false);
         if(m_captureDevice)
         {
-            m_captureDevice->close();
-            // Start transmitting on entry to screen
-            m_captureDevice->setMode(ICaptureDevice::ControllerMode);
+            m_captureDevice->setMode(ICaptureDevice::SniffMode);
             m_captureDevice->open();
         }
-        break;
-    default:
         break;
     }
 
@@ -447,7 +609,7 @@ void MainWindow::modeButtonPressed()
 
 void MainWindow::readData()
 {
-    if(m_captureDevice)
+    if(m_captureDevice && m_mode==OPMODE_SNIFFER)
     {
         QList<Packet> packets = m_captureDevice->getPackets();
         foreach(Packet p, packets)
@@ -457,22 +619,24 @@ void MainWindow::readData()
                 m_packetTable.appendPacket(p);
             }
         }
-
         ui.tableView->scrollToBottom();
     }
-}
 
-void MainWindow::on_actionStart_Capture_toggled(bool checked)
-{
-	if(checked)
-		startCapture();
-	else
-		stopCapture();
-}
-
-void MainWindow::on_actionStop_Capture_triggered()
-{
-	stopCapture();
+    if(m_captureDevice && m_mode==OPMODE_DMXVIEW)
+    {
+        QList<Packet> packets = m_captureDevice->getPackets();
+        if(packets.length()==0) return;
+        Packet p = packets.last();
+        if(p.length()>0)
+        {
+            char startcode = p.at(0);
+            if(startcode != 0) return;
+            int packetLength = qMin(p.length(), 513); // Deal with occasional wrong packet lengths from Gadget2
+            for(int i=1; i<packetLength; i++)
+                ui.dmxGridWidget->setCellValue(i-1, QString::number(static_cast<unsigned char>(p.at(i))));
+            ui.dmxGridWidget->update();
+        }
+    }
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -480,27 +644,11 @@ void MainWindow::on_actionExit_triggered()
     qApp->quit();
 }
 
-void MainWindow::on_actionRestart_Capture_triggered()
-{
-	stopCapture();
-	startCapture();
-}
-
 void MainWindow::startCapture()
 {
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage("Not Capturing");
-    if(ui.stackedWidget->currentIndex()==1)
-        ui.statusBar->showMessage("Not Transmitting");
-
-
     if(!m_captureDevice)
     {
         QMessageBox::warning(this, tr("Working Offline"), tr("Currently no capture device has been selected. Restart the application to select a device."));
-        ui.actionStart_Capture->setChecked(false);
-        ui.actionStop_Capture->setEnabled(false);
-        ui.actionRestart_Capture->setEnabled(false);
         return;
     }
 
@@ -508,20 +656,8 @@ void MainWindow::startCapture()
     if(!m_captureDevice->open())
     {
         QMessageBox::warning(this, tr("Couldn't Open Device"), tr("Unable to open the selected capture device"));
-        ui.actionStart_Capture->setChecked(false);
-        ui.actionStop_Capture->setEnabled(false);
-        ui.actionRestart_Capture->setEnabled(false);
         return;
     }
-
-
-    ui.actionStop_Capture->setEnabled(true);
-    ui.actionRestart_Capture->setEnabled(true);
-
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage(tr("Capturing from %1").arg(m_captureDevice->description()));
-
 
     m_packetTable.clearAll();
 	
@@ -533,18 +669,8 @@ void MainWindow::startCapture()
 
 void MainWindow::stopCapture()
 {
-    if(m_captureDevice)
-    {
+    if (m_captureDevice)
         m_captureDevice->close();
-    }
-
-    if(ui.stackedWidget->currentIndex()==0)
-        ui.statusBar->showMessage(tr("Stopped Capturing"));
-    if(ui.stackedWidget->currentIndex()==1)
-        ui.statusBar->showMessage(tr("Stopped Sending"));
-
-	ui.actionStart_Capture->setChecked(false);
-	ui.actionStop_Capture->setEnabled(false);
 }
 
 void MainWindow::updateTreeWidget(int currentRow)
@@ -592,7 +718,7 @@ void MainWindow::on_actionSave_File_triggered()
         stream << packet.timestamp << " ";
         for(int i=0; i<packet.length(); i++)
         {
-            stream << QString("%1").arg((unsigned char)packet.at(i), 2, 16, QChar('0'));
+            stream << QString("%1").arg(packet.at(i), 2, 16, QChar('0'));
             stream << " ";
         }
         stream << "\r\n";
@@ -759,7 +885,6 @@ void MainWindow::startFade()
     connect(m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
     fadeAtoB = ui.slCrossfade->value() == 255;
     m_fadeTimer->start(0);
-    qDebug() << "Starting Fade " << m_fadeLength;
 }
 
 void MainWindow::fadeTick()
@@ -783,15 +908,6 @@ void MainWindow::fadeTick()
 
 void MainWindow::on_clbDiscoverRdm_pressed()
 {
-    if(!m_captureDevice) return;
-    ui.twRdmDevices->clear();
-
-
-
-    ui.rdmProgressBar->setVisible(true);
-    ui.rdmProgressBar->setMinimum(0);
-    ui.rdmProgressBar->setMaximum(0);
-
     m_controller->startDiscovery();
 }
 
@@ -1365,4 +1481,95 @@ void MainWindow::timestampDisplayChanged()
         ui.actionSecondsSincePrevious->setChecked(true);
         m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET);
     }
+}
+
+void MainWindow::on_actionViewLog_triggered()
+{
+    if(!ui.dwLogging->isVisible())
+        ui.dwLogging->show();
+}
+
+void MainWindow::on_actionUpdateGadget_triggered()
+{
+    QString defaultPath;
+    QStringList desktopLoc = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation);
+    if(desktopLoc.count()>0) defaultPath = desktopLoc.first();
+
+    // Look in the default location, C:\etc\nodesbin
+    if(QDir("C:/etc/nodesbin").exists())
+    {
+        defaultPath = "C:/etc/nodesbin";
+        QStringList filter;
+        filter << "*Gadget_II*";
+        QDirIterator it(defaultPath, filter, QDir::AllEntries | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        QStringList files;
+        while (it.hasNext())
+            files << it.next();
+        files.sort();
+        if(files.count()>0)
+            defaultPath = files.last();
+    }
+
+    QString firmwareFile = QFileDialog::getOpenFileName(this, tr("Select Gadget Firmware"), defaultPath);
+    if(firmwareFile.isEmpty())
+        return;
+    if(!m_captureDevice) return;
+    GadgetCaptureDevice *d = dynamic_cast<GadgetCaptureDevice *>(m_captureDevice);
+    if(!d) return;
+
+    UpdateDialog dialog(this);
+    connect(d, SIGNAL(updateProgressText(QString)), &dialog, SLOT(setStatusText(QString)));
+    connect(d, SIGNAL(updateComplete()), &dialog, SLOT(doneAndRestart()));
+
+    d->updateFirmware(firmwareFile);
+
+    dialog.exec();
+}
+
+void MainWindow::logCategoryToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int category = LogModel::getInstance()->getCategoryFilter();
+    if(checked)
+        category = category | a->data().toInt();
+    else
+        category = category & ~(a->data().toInt());
+    LogModel::getInstance()->setCategoryFilter(category);
+}
+
+void MainWindow::logSeverityToggle(bool checked)
+{
+    QAction *a = dynamic_cast<QAction *>(sender());
+    if(!a) return;
+
+    int severity = LogModel::getInstance()->getSeverityFilter();
+    if(checked)
+        severity = severity | a->data().toInt();
+    else
+        severity = severity & ~(a->data().toInt());
+    LogModel::getInstance()->setSeverity(severity);
+}
+
+void MainWindow::on_tbSaveLog_pressed()
+{
+    QString filename = QFileDialog::getSaveFileName(this,
+                                 tr("Save Log File"),
+                                 QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                 tr("Text Files (*.txt)"));
+    if(filename.isEmpty())
+        return;
+
+    QFile file(filename);
+    bool ok = file.open(QIODevice::WriteOnly);
+    if(!ok)
+    {
+        QMessageBox::warning(this,
+                             tr("Couldn't Open File"),
+                             tr("Unable to open file %1 to save").arg(filename)
+                             );
+        return;
+    }
+    LogModel::getInstance()->saveFile(&file);
 }

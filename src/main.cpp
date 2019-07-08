@@ -26,18 +26,27 @@
 #include "fancysliderstyle.h"
 #include "selectdevicedialog.h"
 #include "capturedevice.h"
+#include "logmodel.h"
 
 
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<QVector <quint16>>("QVector<quint16>");
 
-
-
 	QApplication a(argc, argv);
+    a.setApplicationName("EtcDmxTool");
+    a.setOrganizationName("ETC Inc");
+    a.setApplicationVersion(VERSION);
+
     QProxyStyle *style = new FancyFaderStyle;
     style->setBaseStyle(QStyleFactory::create("Fusion"));
     a.setStyle(style);
+
+    // Startup logging
+    LogModel::getInstance();
+    LogModel::log(QString("Application Starting, version %1").arg(VERSION)
+                  , CDL_SEV_INF
+                  , 1);
 
     // First, determine which USB-RDM Adapter to use
     ICaptureDevice *device = Q_NULLPTR;

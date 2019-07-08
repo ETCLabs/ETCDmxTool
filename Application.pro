@@ -24,23 +24,58 @@ TEMPLATE = app
 TARGET = EtcDmxTool
 QT += core gui
 
-#   v2.0.0.3    Build with plugin-ized dissectors from Marcus
+# Extract version from Git tag/description
+GIT_COMMAND = git --git-dir $$shell_quote($$PWD/.git) --work-tree $$shell_quote($$PWD)
+GIT_TAG = $$system($$GIT_COMMAND describe --always --tags)
 
-PRODUCT_VERSION=2.0.0.3
-
-DEFINES += VERSION=\\\"$$PRODUCT_VERSION\\\"
+DEFINES += VERSION=\\\"$$GIT_TAG\\\"
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += QT_DLL
 
-win32:LIBS += -l$$PWD/whip/ftd2xx -l$$PWD/gadget/GadgetDll
+# Gadget II
+    INCLUDEPATH += gadget
+    HEADERS += gadget/GadgetDLL.h
+win32 {
+    GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
+    GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
+    LIBS += -L$$PWD/gadget -lGadgetDll
+}
+unix {
+    SOURCES += gadget/GadgetDLL.cpp
+}
 
-INCLUDEPATH *=  \
-    src/ \
-    RDM/ \
-    whip/ \
-    gadget
+# Whip
+HEADERS +=  src/whip/ftdcomm.h
+SOURCES +=  src/whip/ftdcomm.cpp
+contains(QT_ARCH, i386) {
+    win32 {
+        INCLUDEPATH += whip/windows
+        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/i386/ftd2xx.dll))
+        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
+        LIBS += -L$$PWD/whip/windows/i386 -lftd2xx
+    }
+    unix {
+        INCLUDEPATH += whip/linux/libftd2xx-i386-1.4.8/release
+        LIBS += -L$$PWD/whip/linux/libftd2xx-i386-1.4.8/release/build -lftd2xx
+    }
+} else {
+    win32 {
+        INCLUDEPATH += whip/windows
+        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx.dll))
+        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
+        LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
+    }
+    unix {
+        INCLUDEPATH += whip/linux/libftd2xx-x86_64-1.4.8/release
+        LIBS += -L$$PWD/whip/linux/libftd2xx-x86_64-1.4.8/release/build -lftd2xx
+    }
+}
+
+# Source
+INCLUDEPATH += src/ \
+    RDM/
 
 HEADERS += src/e110_startcodes.h \
     src/rdm/estardm.h \
@@ -48,7 +83,6 @@ HEADERS += src/e110_startcodes.h \
     src/rdm/rdmEtcConsts.h \
     src/rdm/rdmpidstrings.h \
     src/dissectors/dissectorplugin.h \
-    src/whip/ftdcomm.h \
     src/mainwindow.h \
     src/packettable.h \
     src/packetbuffer.h \
@@ -62,12 +96,14 @@ HEADERS += src/e110_startcodes.h \
     src/selectdevicedialog.h \
     src/dissectors.h \
     src/customdataroles.h \
-    src/levelindicator.h
+    src/levelindicator.h \
+    src/logmodel.h \
+    src/gridwidget.h \
+    src/updatedialog.h
 
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
     src/rdm/rdmpidstrings.cpp \
-    src/whip/FTDComm.cpp \
     src/mainwindow.cpp \
     src/packetbuffer.cpp \
     src/packettable.cpp \
@@ -79,7 +115,10 @@ SOURCES += src/main.cpp \
     src/fileopen.cpp \
     src/hexlineedit.cpp \
     src/dissectors.cpp \
-    src/levelindicator.cpp
+    src/levelindicator.cpp \
+    src/logmodel.cpp \
+    src/gridwidget.cpp \
+    src/updatedialog.cpp
 
 FORMS += ui/mainwindow.ui \
     ui/selectdevicedialog.ui
@@ -99,13 +138,7 @@ TARGET_CUSTOM_EXT = .exe
 DEPLOY_DIR = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy))
 DEPLOY_TARGET = $$shell_quote($$system_path($${DESTDIR}/$${TARGET}$${TARGET_CUSTOM_EXT}))
 
-FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/ftd2xx.dll))
-FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-
-GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
-GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
-
-DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${OUT_PWD}/dissectorplugin*.dll))
+DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${DESTDIR}/dissectorplugin*.dll))
 DISSECTOR_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/dissectorplugin*.dll))
 
 PRE_DEPLOY_COMMAND =  $$sprintf($${QMAKE_MKDIR_CMD}, $$shell_path($${DEPLOY_DIR})) $$escape_expand(\\n\\t)
@@ -116,7 +149,7 @@ PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DISSECTOR_DLL_SRC} $${DISSECTOR_DLL_DST} $
 PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DEPLOY_TARGET} $${DEPLOY_DIR} $$escape_expand(\\n\\t)
 DEPLOY_COMMAND = windeployqt
 DEPLOY_OPT = --dir $${DEPLOY_DIR}
-DEPLOY_INSTALLER = makensis /DPRODUCT_VERSION="$${PRODUCT_VERSION}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
+DEPLOY_INSTALLER = makensis /DPRODUCT_VERSION="$${GIT_TAG}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
 
 win32 {
     QMAKE_CXXFLAGS += /Zi
@@ -124,8 +157,8 @@ win32 {
 }
 
 # Copy the Gadget and Whip DLL to the debug directory for debugging
-QMAKE_POST_LINK += $$QMAKE_COPY $${GADGET_DLL_SRC} $$shell_quote($$system_path($${OUT_PWD})) $$escape_expand(\\n\\t)
-QMAKE_POST_LINK += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $$shell_quote($$system_path($${OUT_PWD})) $$escape_expand(\\n\\t)
+QMAKE_POST_LINK += $$QMAKE_COPY $${GADGET_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
+QMAKE_POST_LINK += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
 
 CONFIG(release, debug|release) {
     QMAKE_POST_LINK += $${PRE_DEPLOY_COMMAND} $$escape_expand(\\n\\t)
