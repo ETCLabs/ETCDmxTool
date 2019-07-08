@@ -34,44 +34,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += QT_DLL
 
-# Gadget II
-    INCLUDEPATH += gadget
-    HEADERS += gadget/GadgetDLL.h
-win32 {
-    GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
-    GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
-    LIBS += -L$$PWD/gadget -lGadgetDll
-}
-unix {
-    SOURCES += gadget/GadgetDLL.cpp
-}
-
-# Whip
-HEADERS +=  src/whip/ftdcomm.h
-SOURCES +=  src/whip/ftdcomm.cpp
-contains(QT_ARCH, i386) {
-    win32 {
-        INCLUDEPATH += whip/windows
-        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/i386/ftd2xx.dll))
-        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-        LIBS += -L$$PWD/whip/windows/i386 -lftd2xx
-    }
-    unix {
-        INCLUDEPATH += whip/linux/libftd2xx-i386-1.4.8/release
-        LIBS += -L$$PWD/whip/linux/libftd2xx-i386-1.4.8/release/build -lftd2xx
-    }
-} else {
-    win32 {
-        INCLUDEPATH += whip/windows
-        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx.dll))
-        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
-        LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
-    }
-    unix {
-        INCLUDEPATH += whip/linux/libftd2xx-x86_64-1.4.8/release
-        LIBS += -L$$PWD/whip/linux/libftd2xx-x86_64-1.4.8/release/build -lftd2xx
-    }
-}
+# Hardware includes
+include($$PWD/Whip.pri)
+include($$PWD/Gadget.pri)
 
 # Source
 INCLUDEPATH += src/ \
@@ -91,7 +56,6 @@ HEADERS += src/e110_startcodes.h \
     src/pcap/pcapng.h \
     src/pcap/pcapngLinkTypes.h \
     src/util.h \
-    src/fileopen.h \
     src/hexlineedit.h \
     src/selectdevicedialog.h \
     src/dissectors.h \
@@ -99,7 +63,10 @@ HEADERS += src/e110_startcodes.h \
     src/levelindicator.h \
     src/logmodel.h \
     src/gridwidget.h \
-    src/updatedialog.h
+    src/updatedialog.h \
+    src/commandlineparse.h \
+    src/stdout.h \
+    src/file.h
 
 SOURCES += src/main.cpp \
     src/rdm/rdmcontroller.cpp \
@@ -112,13 +79,15 @@ SOURCES += src/main.cpp \
     src/pcap/pcapng.cpp \
     src/util.cpp \
     src/selectdevicedialog.cpp \
-    src/fileopen.cpp \
     src/hexlineedit.cpp \
     src/dissectors.cpp \
     src/levelindicator.cpp \
     src/logmodel.cpp \
     src/gridwidget.cpp \
-    src/updatedialog.cpp
+    src/updatedialog.cpp \
+    src/commandlineparse.cpp \
+    src/stdout.cpp \
+    src/file.cpp
 
 FORMS += ui/mainwindow.ui \
     ui/selectdevicedialog.ui
@@ -155,10 +124,6 @@ win32 {
     QMAKE_CXXFLAGS += /Zi
     QMAKE_LFLAGS += /INCREMENTAL:NO /Debug
 }
-
-# Copy the Gadget and Whip DLL to the debug directory for debugging
-QMAKE_POST_LINK += $$QMAKE_COPY $${GADGET_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
-QMAKE_POST_LINK += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $$shell_quote($$system_path($${DESTDIR})) $$escape_expand(\\n\\t)
 
 CONFIG(release, debug|release) {
     QMAKE_POST_LINK += $${PRE_DEPLOY_COMMAND} $$escape_expand(\\n\\t)

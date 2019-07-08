@@ -96,7 +96,7 @@ signals:
     void transmitting();
 protected:
     void addPacket(const Packet &packet);
-    CaptureDeviceMode m_mode;
+    CaptureDeviceMode m_mode = SniffMode;
     QList<Packet> m_packetList;
     QMutex m_listMutex;
     quint8 m_txLevels[513];

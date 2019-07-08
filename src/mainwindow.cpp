@@ -35,13 +35,14 @@
 #include <QListView>
 #include <QStandardPaths>
 #include <QDirIterator>
+#include <QActionGroup>
 #include <cmath>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
 #include "packettable.h"
 #include "hexlineedit.h"
-#include "fileopen.h"
+#include "file.h"
 #include "capturedevice.h"
 #include "customdataroles.h"
 #include "levelindicator.h"
@@ -244,12 +245,12 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     connect(ui.tableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),
             this, SLOT(selectionChanged(QModelIndex,QModelIndex)));
 
-    ui.tableView->setColumnWidth(0, 80);
+    ui.tableView->setColumnWidth(0, 200);
     ui.tableView->setColumnWidth(1, 160);
     ui.tableView->setColumnWidth(2, 160);
     ui.tableView->setColumnWidth(3, 100);
     ui.tableView->setColumnWidth(4, 300);
-	ui.tableView->horizontalHeader()->setStretchLastSection(true);
+    ui.tableView->horizontalHeader()->setStretchLastSection(true);
 
 	ui.treeWidget->setColumnWidth(0, 240);
 
@@ -410,11 +411,41 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     ui.twRawParams->setCellWidget(2, 1, m_subDeviceSpin);
     connect(m_subDeviceSpin, SIGNAL(valueChanged(int)), this, SLOT(composeRawCommand()));
 
-    connect(ui.actionTimeOfDay, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
-    connect(ui.actionDateTime, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
-    connect(ui.actionSecondsSinceBeginning, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
-    connect(ui.actionSecondsSincePrevious, SIGNAL(triggered()), this, SLOT(timestampDisplayChanged()));
+    // Sniffer time format
+    {
+        auto actionGroup = new QActionGroup(this);
+        actionGroup->addAction(ui.actionDateTime);
+        actionGroup->addAction(ui.actionTimeOfDay);
+        actionGroup->addAction(ui.actionSecondsSinceBeginning);
+        actionGroup->addAction(ui.actionSecondsSincePrevious);
 
+        connect(ui.actionDateTime, &QAction::triggered, [=]() { m_packetTable.setTimeFormat(PacketTable::DATE_AND_TIME); });
+        connect(ui.actionTimeOfDay, &QAction::triggered, [=]() { m_packetTable.setTimeFormat(PacketTable::TIME_OF_DAY); });
+        connect(ui.actionSecondsSinceBeginning, &QAction::triggered, [=]() { m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_CAPTURE_START); });
+        connect(ui.actionSecondsSincePrevious, &QAction::triggered, [=]() { m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET); });
+
+        connect(&m_packetTable, &PacketTable::timeFormatChange, [=]() {
+            switch (m_packetTable.timeFormat())
+            {
+                case PacketTable::DATE_AND_TIME:
+                    ui.actionDateTime->setChecked(true);
+                    break;
+
+                case PacketTable::TIME_OF_DAY:
+                    ui.actionTimeOfDay->setChecked(true);
+                    break;
+
+                case PacketTable::SECONDS_SINCE_CAPTURE_START:
+                    ui.actionSecondsSinceBeginning->setChecked(true);
+                    break;
+
+                case PacketTable::SECONDS_SINCE_PREVIOUS_PACKET:
+                    ui.actionSecondsSincePrevious->setChecked(true);
+                    break;
+            }
+        });
+        m_packetTable.setTimeFormat(PacketTable::DATE_AND_TIME);
+    }
 
     // Logging
     ui.lvLog->setModel(LogModel::getInstance());
@@ -705,25 +736,13 @@ void MainWindow::on_actionSave_File_triggered()
 	QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", QString(), "Text Files (*.txt)");
 	if(filename.isEmpty()) return;
 
-	QFile file(filename);
-	bool ok = file.open(QIODevice::WriteOnly);
-	if(!ok)
-		return;
-
-	QTextStream stream(&file);
-
-    for(int i=0; i<m_packetTable.rowCount(); ++i)
-	{
-        const Packet &packet = m_packetTable.getPacket(i);
-        stream << packet.timestamp << " ";
-        for(int i=0; i<packet.length(); i++)
-        {
-            stream << QString("%1").arg(packet.at(i), 2, 16, QChar('0'));
-            stream << " ";
-        }
-        stream << "\r\n";
-    }
-	file.close();
+    FileSave *f = new FileSave(m_packetTable, filename);
+    connect(f, &FileSave::Started, [=]() {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+    });
+    connect(f, &FileSave::Finished, [=]() {
+        QApplication::restoreOverrideCursor();
+    });
 }
 
 void MainWindow::on_actionOpen_File_triggered()
@@ -731,26 +750,21 @@ void MainWindow::on_actionOpen_File_triggered()
 	QString filename = QFileDialog::getOpenFileName(this, "Open File", QString(), "Text Files (*.txt)");
 	if(filename.isEmpty()) return;
 
-    // Clear old
+    // Stop any capture and Clear old
+    stopCapture();
     m_packetTable.clearAll();
     ui.treeWidget->clear();
     ui.textEdit->clear();
 
     FileOpen *f = new FileOpen(m_packetTable, filename);
-    connect(f, SIGNAL(Started()), this, SLOT(openFileStarted()));
-    connect(f, SIGNAL(Finished()), this, SLOT(openFileComplete()));
-}
-
-void MainWindow::openFileStarted()
-{
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-}
-
-void MainWindow::openFileComplete()
-{
-    QApplication::restoreOverrideCursor();
-    if (ui.tableView->model()->rowCount())
-        ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
+    connect(f, &FileOpen::Started, [=]() {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+    });
+    connect(f, &FileOpen::Finished, [=]() {
+        QApplication::restoreOverrideCursor();
+        if (ui.tableView->model()->rowCount())
+            ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
+    });
 }
 
 #define INDEXCOL_WIDTH 6
@@ -1282,7 +1296,7 @@ void MainWindow::rawDataTypeComboChanged(int index)
 
 void MainWindow::setupRawDataEditor(int datatype, int row)
 {
-    QWidget *editor;
+    QWidget *editor = Q_NULLPTR;
     switch(datatype)
     {
     case RDMDATATYPE_UINT8:
@@ -1320,9 +1334,12 @@ void MainWindow::setupRawDataEditor(int datatype, int row)
 
     }
 
-    ui.twRawParams->setCellWidget(row, 1, editor);
+    if (editor)
+    {
+        ui.twRawParams->setCellWidget(row, 1, editor);
 
-    m_customPropEdits[row] = editor;
+        m_customPropEdits[row] = editor;
+    }
 }
 
 void MainWindow::composeRawCommand()
@@ -1441,46 +1458,6 @@ void MainWindow::rawCommandComplete(quint8 response, const QByteArray &data)
 
     ui.teResponseData->appendPlainText(QString("\r\n"));
     ui.teResponseData->appendPlainText(prettifyHex(data));
-}
-
-
-void MainWindow::timestampDisplayChanged()
-{
-    QAction *a = dynamic_cast<QAction*>(sender());
-    if(!a) return;
-
-    if(a==ui.actionDateTime)
-    {
-        ui.actionDateTime->setChecked(true);
-        ui.actionTimeOfDay->setChecked(false);
-        ui.actionSecondsSinceBeginning->setChecked(false);
-        ui.actionSecondsSincePrevious->setChecked(false);
-        m_packetTable.setTimeFormat(PacketTable::DATE_AND_TIME);
-    }
-    if(a==ui.actionTimeOfDay)
-    {
-        ui.actionDateTime->setChecked(false);
-        ui.actionTimeOfDay->setChecked(true);
-        ui.actionSecondsSinceBeginning->setChecked(false);
-        ui.actionSecondsSincePrevious->setChecked(false);
-        m_packetTable.setTimeFormat(PacketTable::TIME_OF_DAY);
-    }
-    if(a==ui.actionSecondsSinceBeginning)
-    {
-        ui.actionDateTime->setChecked(false);
-        ui.actionTimeOfDay->setChecked(false);
-        ui.actionSecondsSinceBeginning->setChecked(true);
-        ui.actionSecondsSincePrevious->setChecked(false);
-        m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_CAPTURE_START);
-    }
-    if(a==ui.actionSecondsSincePrevious)
-    {
-        ui.actionDateTime->setChecked(false);
-        ui.actionTimeOfDay->setChecked(false);
-        ui.actionSecondsSinceBeginning->setChecked(false);
-        ui.actionSecondsSincePrevious->setChecked(true);
-        m_packetTable.setTimeFormat(PacketTable::SECONDS_SINCE_PREVIOUS_PACKET);
-    }
 }
 
 void MainWindow::on_actionViewLog_triggered()

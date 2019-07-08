@@ -27,7 +27,7 @@
 #include "selectdevicedialog.h"
 #include "capturedevice.h"
 #include "logmodel.h"
-
+#include "commandlineparse.h"
 
 int main(int argc, char *argv[])
 {
@@ -37,6 +37,17 @@ int main(int argc, char *argv[])
     a.setApplicationName("EtcDmxTool");
     a.setOrganizationName("ETC Inc");
     a.setApplicationVersion(VERSION);
+
+    // Command line options
+    auto cmdParse = new commandLineParse(a);
+    switch (cmdParse->getResult())
+    {
+    case commandLineParse::ExitApp: a.quit(); return 0;
+    case commandLineParse::ConsoleOnly: return a.exec();
+    case commandLineParse::GuiOnly: break;
+    }
+
+    // Open GUI
 
     QProxyStyle *style = new FancyFaderStyle;
     style->setBaseStyle(QStyleFactory::create("Fusion"));
@@ -63,5 +74,5 @@ int main(int argc, char *argv[])
 
     MainWindow w(device);
     w.showMaximized();
-	return a.exec();
+    return a.exec();
 }
