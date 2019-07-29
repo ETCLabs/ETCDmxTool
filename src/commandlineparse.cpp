@@ -1,6 +1,7 @@
 #include "commandlineparse.h"
 #include "capturedevice.h"
 #include "file.h"
+#include "logmodel.h"
 #include <QTextStream>
 #include <QDateTime>
 #include <QDir>
@@ -54,7 +55,7 @@ void commandLineParse::doSniff()
     QFileInfo fi(f);
     if (!f.open(QFile::WriteOnly))
     {
-        qStdErr() << fi.absoluteFilePath() << " is not writable" << endl;
+        LogModel::log(tr("%1 is not writable").arg(fi.absoluteFilePath()), CDL_SEV_ERR, 1);
         parseResult = ExitApp;
         return;
     }
@@ -64,7 +65,7 @@ void commandLineParse::doSniff()
     auto devList = new CaptureDeviceList();
     if (!devList->count())
     {
-        qStdErr() << "No sniffing devices found, aborting" << endl;
+        LogModel::log(tr("No sniffing devices found, aborting"), CDL_SEV_ERR, 1);
         parseResult = ExitApp;
         return;
     }
@@ -75,7 +76,7 @@ void commandLineParse::doSniff()
             if (devList->getDevice(n)->info().deviceCapabilities & CaptureDeviceList::CAPABILITY_SNIFFER)
             {
                 captureDevice = devList->getDevice(n);
-                qStdOut() << "Using device: " << captureDevice->info().description << endl;
+                LogModel::log(tr("Using device: %1").arg(captureDevice->info().description), CDL_SEV_INF, 1);
             }
             if (captureDevice) break;
         }
@@ -83,14 +84,14 @@ void commandLineParse::doSniff()
 
         if (!captureDevice)
         {
-            qStdErr() << "No suitable sniffing devices found, aborting" << endl;
+            LogModel::log(tr("No suitable sniffing devices found, aborting"), CDL_SEV_ERR, 1);
             parseResult = ExitApp;
             return;
         }
 
         if (!captureDevice->open())
         {
-            qStdErr() << "Unable to open sniffing device, aborting" << endl;
+            LogModel::log(tr("Unable to open sniffing device, aborting"), CDL_SEV_ERR, 1);
             parseResult = ExitApp;
             return;
         }
@@ -110,5 +111,5 @@ void commandLineParse::doSniff()
                     parser.isSet(optCompress) ? FileSave::compressed : FileSave::original,
                     FileSave::StreamToFile);
         if (fileSave)
-            qStdOut() << "Sniffing direct to: " << fi.absoluteFilePath() << endl;
+            LogModel::log(tr("Sniffing direct to: %1").arg(fi.absoluteFilePath()), CDL_SEV_INF, 1);
 }

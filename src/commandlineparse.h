@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QCommandLineParser>
 #include <QFile>
-#include "stdout.h"
 #include "packettable.h"
 
 class commandLineParse : public QObject
