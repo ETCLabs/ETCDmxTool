@@ -1,4 +1,5 @@
 #include "logmodel.h"
+#include "stdout.h"
 
 #include <QDateTime>
 #include <QSettings>
@@ -49,18 +50,24 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-void LogModel::logWithoutFilter(const QString &string)
+void LogModel::doLog(const QString &message, quint32 severity)
 {
     if(this->thread()==QThread::currentThread())
     {
         emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
-        m_logStrings <<  QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + string;
+        QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
+        if (severity == CDL_SEV_ERR) {
+            qStdErr() << data << endl;
+        } else {
+            qStdOut() << data << endl;
+        }
+        m_logStrings << data;
         emit endInsertRows();
     }
     else {
         QMetaObject::invokeMethod(this,
-                                  "logWithoutFilter",
-                                  Q_ARG(QString, string)
+                                  "doLog",
+                                  Q_ARG(QString, message)
                                  );
     }
 }
@@ -74,10 +81,7 @@ void LogModel::doLog(const QString &message, quint32 severity, int verbosity)
     {
         if(severity<=m_severity && verbosity<=m_verbosity)
         {
-            emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
-            QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
-            m_logStrings << data;
-            emit endInsertRows();
+            doLog(message, severity);
         }
     }
     else {
@@ -91,14 +95,9 @@ void LogModel::doLog(const QString &message, quint32 severity, int verbosity)
     }
 }
 
-void LogModel::log(const QString &message, quint32 severity, int verbosity)
-{
-    LogModel::getInstance()->doLog(message, severity, verbosity);
-}
-
 void __stdcall GadgetLogCallback(const char* logData)
 {
-    LogModel::getInstance()->logWithoutFilter(QString(logData));
+    LogModel::getInstance()->log(QString(logData));
 }
 
 QString LogModel::severityToString(int severity)
