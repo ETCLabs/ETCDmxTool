@@ -29,6 +29,7 @@
 
 
 class ICaptureDevice;
+class QSerialPort;
 
 // A class which lists all the supported capture devices
 class CaptureDeviceList
@@ -37,7 +38,8 @@ public:
 
     enum DevType{
         DEVTYPE_WHIP,
-        DEVTYPE_GADGET
+        DEVTYPE_GADGET,
+        DEVTYPE_CODA
     };
 
     enum DeviceCapability {
@@ -61,10 +63,7 @@ public:
     ICaptureDevice *getDevice(int index);
 
 private:
-
     QList<CaptureDeviceInfo> m_devList;
-
-
     FTDComm m_comm;
 };
 
@@ -156,6 +155,23 @@ private:
     QByteArray m_packetBuffer;
     QList<RdmDeviceInfo *> m_infoList;
     bool m_enabled = true;
+};
+
+
+class CodaCaptureDevice : public ICaptureDevice
+{
+    Q_OBJECT
+public:
+    CodaCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info);
+    bool open();
+    void close();
+    virtual void setDmxEnabled(bool enabled) {};
+private slots:
+    void dataReadyRead();
+private:
+    QSerialPort *m_port;
+    QString m_portName;
+    quint16 m_buffer[4096];
 };
 
 

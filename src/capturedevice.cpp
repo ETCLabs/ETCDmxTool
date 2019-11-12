@@ -27,7 +27,11 @@
 #include <QThread>
 #include <QTimer>
 #include <QDir>
+#include <QDebug>
 #include "logmodel.h"
+
+#include <QtSerialPort/QSerialPortInfo>
+#include <QtSerialPort/QSerialPort>
 
 /******************************************** ICaptureDevice *****************************/
 
@@ -412,6 +416,18 @@ CaptureDeviceList::CaptureDeviceList()
         m_devList << info;
         i++;
     }
+
+    i=0;
+    foreach(QSerialPortInfo spinfo, QSerialPortInfo::availablePorts())
+    {
+        CaptureDeviceInfo info;
+        info.type = DEVTYPE_CODA;
+        info.index = i;
+        info.description = spinfo.portName();
+        info.deviceCapabilities = CAPABILITY_SNIFFER;
+        m_devList << info;
+        i++;
+    }
 }
 
 QStringList CaptureDeviceList::deviceNames()
@@ -441,5 +457,59 @@ ICaptureDevice *CaptureDeviceList::getDevice(int deviceIndex)
         return device;
     }
 
+    if(info.type==DEVTYPE_CODA)
+    {
+        CodaCaptureDevice *device = new CodaCaptureDevice(info);
+        return device;
+    }
+
     return Q_NULLPTR;
+}
+
+
+/************************************** CodaCaptureDevice ******************/
+
+CodaCaptureDevice::CodaCaptureDevice(const CaptureDeviceList::CaptureDeviceInfo &info)
+    : ICaptureDevice(info)
+{
+    m_portName = info.description;
+}
+
+bool CodaCaptureDevice::open()
+{
+    m_port = new QSerialPort(this);
+    m_port->setPortName(m_portName);
+    connect(m_port, &QSerialPort::readyRead, this, &CodaCaptureDevice::dataReadyRead);
+    bool ok = m_port->open(QIODevice::ReadOnly);
+    if(!ok)
+    {
+        m_port->deleteLater();
+        m_port = Q_NULLPTR;
+        return false;
+    }
+
+    m_port->setBaudRate(1000000);
+
+    return true;
+}
+
+void CodaCaptureDevice::close()
+{
+    if(m_port)
+    {
+        m_port->close();
+        m_port->deleteLater();
+        m_port = Q_NULLPTR;
+    }
+}
+
+void CodaCaptureDevice::dataReadyRead()
+{
+    qint64 bytesRead = m_port->read((char*)m_buffer, 4096);
+    QByteArray packet;
+    for(qint64 i=0; i<bytesRead; i++)
+    {
+        if(m_buffer[i] & 0x8000)
+            qDebug() << "Break";
+    }
 }

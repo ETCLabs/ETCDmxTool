@@ -22,7 +22,7 @@
 
 TEMPLATE = app
 TARGET = EtcDmxTool
-QT += core gui
+QT += core gui serialport
 
 # Extract version from Git tag/description
 GIT_COMMAND = git --git-dir $$shell_quote($$PWD/.git) --work-tree $$shell_quote($$PWD)
