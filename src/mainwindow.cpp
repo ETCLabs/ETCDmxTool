@@ -1392,12 +1392,25 @@ void MainWindow::composeRawCommand()
 
     data.append(static_cast<char>(commandClass));
 
-    quint8 pid = 0;
-    if(m_paramCombo->currentIndex()>=0)
+    quint16 pid = 0;
+    QString text = m_paramCombo->currentText();
+    if(Util::getAllRdmParameterIds().values().contains(text))
     {
         pid = m_paramCombo->currentData().toInt();
     }
-    data.append(static_cast<char>(pid));
+    else
+    {
+        // Deal with Custom PIDs entered in hex
+        QString pidText = m_paramCombo->currentText();
+        if(pidText.startsWith("0x", Qt::CaseInsensitive))
+            pidText.remove(0, 2);
+        bool ok = false;
+        pid = 0xFFFF & pidText.toInt(&ok, 16);
+        if(!ok)
+            QMessageBox::warning(this, tr("Invalid PID"), tr("Enter custom pids in hexadecimal format)"));
+    }
+    data.append((pid & 0xFF00) >> 8);
+    data.append(pid & 0xFF);
 
     // Param Data
     quint8 paramDataLength = m_customCommandParamData.length();
