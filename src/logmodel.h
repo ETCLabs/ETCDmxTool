@@ -72,12 +72,17 @@ public:
 
     // Logging Function
     // These *are* threadsafe - can be called from any thread
-    static void log(const QString &message, quint32 severity, int verbosity);
+    static void log(const QString &message, quint32 severity, int verbosity) {
+        LogModel::getInstance()->doLog(message, severity, verbosity);
+    }
 
 public slots:
 
     // Logging Function
-    void logWithoutFilter(const QString &string);
+    // These *are* threadsafe - can be called from any thread
+    static void log(const QString &message) {
+        LogModel::getInstance()->doLog(message);
+    }
 
     // Filtering Functions
     void setSeverity(int severity);
@@ -88,6 +93,7 @@ public slots:
     void saveFile(QFile *file);
 private slots:
     void doLog(const QString &message, quint32 severity, int verbosity);
+    void doLog(const QString &message, quint32 severity = CDL_SEV_INF);
 private:
     static LogModel *m_instance;
     explicit LogModel(QObject *parent = nullptr);

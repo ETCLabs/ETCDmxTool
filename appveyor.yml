@@ -12,7 +12,7 @@
 #skip_non_tags: true
 
 # Build worker image (VM template)
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 #---------------------------------#
 #       build configuration       #
@@ -21,7 +21,7 @@ image: Visual Studio 2015
 version: '{build}'
 
 environment:
-  QT_Ver: 5.10.1
+  QT_Ver: 5.12.4
   
 # build platform, i.e. x86, x64, Any CPU. This setting is optional.
 platform: x86
@@ -38,11 +38,11 @@ build:
 install:
   # MSVC Paths
   # https://www.appveyor.com/docs/lang/cpp/#visual-studio
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
 
   # QT Paths
   # https://www.appveyor.com/docs/build-environment/#qt
-  - set QTDIR=C:\Qt\%QT_Ver%\msvc2015
+  - set QTDIR=C:\Qt\%QT_Ver%\msvc2017
   - set PATH=%PATH%;%QTDIR%\bin
 
   # NSIS Paths

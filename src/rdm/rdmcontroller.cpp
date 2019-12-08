@@ -494,6 +494,7 @@ void RDMController::executeCustomCommand(RDM_CmdC *command)
 
 void RDMController::readCustomCommand()
 {
+    int foundAt = -1;
     for(uint i=0; i<Gadget2_GetNumResponses(); i++)
     {
         RDM_CmdC *resp = Gadget2_GetResponse(i);
@@ -503,7 +504,12 @@ void RDMController::readCustomCommand()
             m_runningCustomCommand = false;
             emit customCommandComplete(resp->getResponseType(),
                                    QByteArray(static_cast<const char*>(resp->getBuffer()), resp->getLength()));
+            foundAt = i;
         }
+    }
+
+    if (foundAt>-1) {
+        Gadget2_ClearResponse(foundAt);
     }
 
     if(m_runningCustomCommand)

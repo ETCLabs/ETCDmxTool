@@ -23,9 +23,10 @@
 #include <QDateTime>
 
 PacketTable::PacketTable(QObject *parent)
-    : QAbstractTableModel(parent)
+    : QAbstractTableModel(parent),
+      m_timeFormat(DATE_AND_TIME)
 {
-     m_timeFormat = DATE_AND_TIME;
+    emit timeFormatChange();
 }
 
 PacketTable::~PacketTable()
@@ -121,7 +122,9 @@ void PacketTable::clearAll()
 
 void PacketTable::appendPacket(Packet &packet)
 {
-    DissectorPlugin *dissector = m_dissectors->getDissector(packet);
+    DissectorPlugin *dissector = Q_NULLPTR;
+    if (m_dissectors)
+        dissector = m_dissectors->getDissector(packet);
 
     decltype(m_packets) newPackets;
     int startRow = rowCount();
@@ -136,11 +139,18 @@ void PacketTable::appendPacket(Packet &packet)
         m_packets.append(newPackets);
         endInsertRows();
     }
+
+    emit newPacket();
 }
 
 const Packet &PacketTable::getPacket(int row) const
 {
     return m_packets.at(row);
+}
+
+Packet PacketTable::takePacket(int row)
+{
+    return m_packets.takeAt(row);
 }
 
 void PacketTable::registerProtocolDissectors(dissectors *dissectors)

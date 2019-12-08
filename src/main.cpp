@@ -27,16 +27,44 @@
 #include "selectdevicedialog.h"
 #include "capturedevice.h"
 #include "logmodel.h"
+#include "commandlineparse.h"
 
+void messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    Q_UNUSED(context);
+    quint32 severity = CDL_SEV_UKN;
+    switch (type) {
+        case QtDebugMsg: severity = CDL_SEV_INF; break;
+        case QtInfoMsg:  severity = CDL_SEV_INF; break;
+        case QtWarningMsg: severity = CDL_SEV_WRN; break;
+        case QtCriticalMsg: severity = CDL_SEV_ERR; break;
+        case QtFatalMsg:  severity = CDL_SEV_ERR; break;
+    }
+
+    LogModel::log(msg, severity, 1);
+}
 
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<QVector <quint16>>("QVector<quint16>");
 
+    qInstallMessageHandler(messageHandler);
+
 	QApplication a(argc, argv);
     a.setApplicationName("EtcDmxTool");
     a.setOrganizationName("ETC Inc");
     a.setApplicationVersion(VERSION);
+
+    // Command line options
+    auto cmdParse = new commandLineParse(a);
+    switch (cmdParse->getResult())
+    {
+    case commandLineParse::ExitApp: a.quit(); return 0;
+    case commandLineParse::ConsoleOnly: return a.exec();
+    case commandLineParse::GuiOnly: break;
+    }
+
+    // Open GUI
 
     QProxyStyle *style = new FancyFaderStyle;
     style->setBaseStyle(QStyleFactory::create("Fusion"));
@@ -63,5 +91,5 @@ int main(int argc, char *argv[])
 
     MainWindow w(device);
     w.showMaximized();
-	return a.exec();
+    return a.exec();
 }

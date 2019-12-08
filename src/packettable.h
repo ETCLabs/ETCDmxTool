@@ -33,7 +33,7 @@ class PacketTable : public QAbstractTableModel
 	Q_OBJECT
 
 public:
-    PacketTable(QObject *parent = NULL);
+    PacketTable(QObject *parent = Q_NULLPTR);
 	virtual ~PacketTable();
 
     enum COLUMNS
@@ -65,16 +65,25 @@ public:
     void appendPacket(Packet &packet);
 
     const Packet &getPacket(int row) const;
+    Packet takePacket(int row);
 
     // Register dissectors
     void registerProtocolDissectors(dissectors *dissectors);
 
     // Time Format
-    void setTimeFormat(TIMEFORMAT format) { m_timeFormat = format;}
+    void setTimeFormat(TIMEFORMAT format) {
+        m_timeFormat = format;
+        emit timeFormatChange();
+    }
     TIMEFORMAT timeFormat() const { return m_timeFormat;}
+
+signals:
+    void newPacket();
+    void timeFormatChange();
+
 private:
     QList<Packet> m_packets;
-    dissectors *m_dissectors;
+    dissectors *m_dissectors = Q_NULLPTR;
     TIMEFORMAT m_timeFormat;
     QString formatTime(quint64 time, quint64 previous, quint64 start) const;
 };
