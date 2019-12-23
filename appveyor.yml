@@ -21,7 +21,7 @@ image: Visual Studio 2017
 version: '{build}'
 
 environment:
-  QT_Ver: 5.12.4
+  QT_Ver: 5.12.5
   
 # build platform, i.e. x86, x64, Any CPU. This setting is optional.
 platform: x86
