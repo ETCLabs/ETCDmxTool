@@ -55,20 +55,10 @@ FileOpen::FileOpen(PacketTable &packetTable, QString fileName, QObject *parent) 
         LogModel::log(QString("Unable to open file %1 for read").arg(m_file->fileName()), CDL_SEV_ERR, 1);
         return;
     }
-
-    // Thread off reading
-    m_thread = new QThread;
-    m_thread->setObjectName(QString("File Opener"));
-    this->moveToThread(m_thread);
-    connect(m_thread, SIGNAL(started()), this, SLOT(doRead()));
-    connect(this, SIGNAL(Finished()), this, SLOT(deleteLater()));
-    m_thread->start();
 }
 
 FileOpen::~FileOpen()
 {
-    m_thread->exit();
-    m_thread->deleteLater();
     m_file->close();
 }
 
@@ -233,20 +223,10 @@ FileSave::FileSave(PacketTable &packetTable, QString fileName, format_t fileForm
         fileStream.setVersion(CompressedFile::DataStreamVersion);
         fileStream << CompressedFile::MagicHeader << CompressedFile::Version_0;
     }
-
-    // Thread off saving
-    m_thread = new QThread;
-    m_thread->setObjectName(QString("File Saver"));
-    this->moveToThread(m_thread);
-    connect(m_thread, SIGNAL(started()), this, SLOT(doSave()));
-    connect(this, SIGNAL(Finished()), this, SLOT(deleteLater()));
-    m_thread->start();
 }
 
 FileSave::~FileSave()
 {
-    m_thread->exit();
-    m_thread->deleteLater();
     m_file->close();
 }
 

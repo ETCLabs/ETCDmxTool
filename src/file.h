@@ -2,7 +2,6 @@
 #define FILE_H
 
 #include <QObject>
-#include <QThread>
 #include <QFile>
 #include <QTextStream>
 #include "packettable.h"
@@ -19,15 +18,12 @@ signals:
     void Finished();
 
 public slots:
-
-private slots:
     void doRead();
 private:
     void loadOriginal(QFile* file);
     bool loadCompressed(QFile* file);
     bool loadGoddardDesigns(QFile* file);
 
-    QThread *m_thread;
     PacketTable *m_packetTable;
     QFile *m_file;
 };
@@ -54,14 +50,11 @@ signals:
     void Finished();
 
 public slots:
-
-private slots:
-    void doSave(); // Thread
+    void doSave();
 private:
     void writeTable();
     void writePacket(QTextStream &fileStream, const Packet &packet);
     void writePacket(QDataStream &fileStream, const Packet &packet);
-    QThread *m_thread;
     PacketTable *m_packetTable;
     QFile *m_file;
     QTextStream *m_stream;

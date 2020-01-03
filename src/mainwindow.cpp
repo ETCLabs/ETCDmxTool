@@ -37,6 +37,7 @@
 #include <QDirIterator>
 #include <QActionGroup>
 #include <cmath>
+#include <QThread>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -737,12 +738,22 @@ void MainWindow::on_actionSave_File_triggered()
 	if(filename.isEmpty()) return;
 
     FileSave *f = new FileSave(m_packetTable, filename);
-    connect(f, &FileSave::Started, [=]() {
+    QThread *fileSaveThread = new QThread(this);
+    f->moveToThread(fileSaveThread);
+    fileSaveThread->start();
+    connect(fileSaveThread, &QThread::finished, fileSaveThread, &QObject::deleteLater);
+    connect(f, SIGNAL(Finished()), fileSaveThread, SLOT(quit()),        Qt::DirectConnection);
+
+    // Needs to be queued so the action happens in the GUI thread
+    connect(f, &FileSave::Started, this, [=]() {
         QApplication::setOverrideCursor(Qt::WaitCursor);
-    });
-    connect(f, &FileSave::Finished, [=]() {
+    }, Qt::QueuedConnection);
+    connect(f, &FileSave::Finished, this, [=]() {
         QApplication::restoreOverrideCursor();
-    });
+        f->deleteLater();
+    }, Qt::QueuedConnection);
+
+    QMetaObject::invokeMethod(f, "doSave", Qt::QueuedConnection);
 }
 
 void MainWindow::on_actionOpen_File_triggered()
@@ -757,14 +768,25 @@ void MainWindow::on_actionOpen_File_triggered()
     ui.textEdit->clear();
 
     FileOpen *f = new FileOpen(m_packetTable, filename);
-    connect(f, &FileOpen::Started, [=]() {
+    QThread *fileOpenThread = new QThread(this);
+    f->moveToThread(fileOpenThread);
+    fileOpenThread->start();
+    connect(fileOpenThread, &QThread::finished, fileOpenThread, &QObject::deleteLater);
+    connect(f, SIGNAL(Finished()), fileOpenThread, SLOT(quit()), Qt::DirectConnection);
+
+    // Needs to be queued so the action happens in the GUI thread
+    connect(f, &FileOpen::Started, this, [=]() {
         QApplication::setOverrideCursor(Qt::WaitCursor);
-    });
-    connect(f, &FileOpen::Finished, [=]() {
+    }, Qt::QueuedConnection);
+    connect(f, &FileOpen::Finished, this, [=]() {
         QApplication::restoreOverrideCursor();
         if (ui.tableView->model()->rowCount())
             ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
-    });
+        f->deleteLater();
+    }, Qt::QueuedConnection);
+
+
+    QMetaObject::invokeMethod(f, "doRead", Qt::QueuedConnection);
 }
 
 #define INDEXCOL_WIDTH 6
@@ -1392,11 +1414,10 @@ void MainWindow::composeRawCommand()
 
     data.append(static_cast<char>(commandClass));
 
-    quint16 pid = 0;
     QString text = m_paramCombo->currentText();
     if(Util::getAllRdmParameterIds().values().contains(text))
     {
-        pid = m_paramCombo->currentData().toInt();
+        m_customCommandPid = m_paramCombo->currentData().toInt();
     }
     else
     {
@@ -1405,12 +1426,12 @@ void MainWindow::composeRawCommand()
         if(pidText.startsWith("0x", Qt::CaseInsensitive))
             pidText.remove(0, 2);
         bool ok = false;
-        pid = 0xFFFF & pidText.toInt(&ok, 16);
+        m_customCommandPid = 0xFFFF & pidText.toInt(&ok, 16);
         if(!ok)
             QMessageBox::warning(this, tr("Invalid PID"), tr("Enter custom pids in hexadecimal format)"));
     }
-    data.append((pid & 0xFF00) >> 8);
-    data.append(pid & 0xFF);
+    data.append((m_customCommandPid & 0xFF00) >> 8);
+    data.append(m_customCommandPid & 0xFF);
 
     // Param Data
     quint8 paramDataLength = m_customCommandParamData.length();
@@ -1434,12 +1455,11 @@ void MainWindow::on_btnSendCustomRDM_pressed()
         memcpy(dataPtr, m_customCommandParamData.data(), m_customCommandParamData.length());
     }
 
-    quint16 parameter = m_paramCombo->currentData().toInt();
     quint8 action =  m_commandCombo->currentData().toInt();
 
     RDM_CmdC *command = new RDM_CmdC(
                 action,
-                parameter,
+                m_customCommandPid,
                 0xFF & m_subDeviceSpin->value(),
                 0xFF & m_customCommandParamData.length(),
                 dataPtr,
