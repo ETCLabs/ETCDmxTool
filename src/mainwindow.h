@@ -49,6 +49,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(ICaptureDevice *captureDevice);
 	~MainWindow();
+    virtual void dragEnterEvent(QDragEnterEvent *event);
+    virtual void dropEvent(QDropEvent* event);
 
 public slots:
     void readData();
@@ -95,6 +97,8 @@ private slots:
 private:
     Q_SIGNAL void updateStatusBarMsg();
     Q_SLOT void doUpdatetStatusBarMsg();
+    bool isValidMimeData(const QMimeData* mimeData);
+    void openFile(QString fileName);
 
 protected:
     virtual void resizeEvent(QResizeEvent *e);

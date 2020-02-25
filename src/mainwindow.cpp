@@ -38,6 +38,10 @@
 #include <QActionGroup>
 #include <cmath>
 #include <QThread>
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -485,10 +489,36 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     }
     ui.tbSeverity->setMenu(severityMenu);
     emit updateStatusBarMsg();
+
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
 {}
+
+bool MainWindow::isValidMimeData(const QMimeData* mimeData)
+{
+    if (mimeData->hasUrls() && (mimeData->urls().count() == 1))
+        for (auto url : mimeData->urls())
+            if (url.scheme() == "file") return true;
+
+    return false;
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (ui.actionOpen_File->isEnabled() == false) return;
+
+    if (isValidMimeData(event->mimeData())) event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+    if (ui.actionOpen_File->isEnabled() == false) return;
+
+    if (isValidMimeData(event->mimeData()))
+        openFile(event->mimeData()->urls().first().toLocalFile());
+}
 
 void MainWindow::doUpdatetStatusBarMsg()
 {
@@ -635,8 +665,6 @@ void MainWindow::modeButtonPressed(bool checked)
         }
         break;
     }
-
-
 }
 
 void MainWindow::readData()
@@ -759,7 +787,13 @@ void MainWindow::on_actionSave_File_triggered()
 void MainWindow::on_actionOpen_File_triggered()
 {
 	QString filename = QFileDialog::getOpenFileName(this, "Open File", QString(), "Text Files (*.txt)");
-	if(filename.isEmpty()) return;
+    openFile(filename);
+}
+
+void MainWindow::openFile(QString filename)
+{
+    if (filename.isEmpty()) return;
+    if (!QFileInfo::exists(filename)) return;
 
     // Stop any capture and Clear old
     stopCapture();
