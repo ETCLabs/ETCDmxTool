@@ -3,39 +3,29 @@
 
 ETCDmxTool is a free, open-source tool with the ability to capture DMX/RDM data; to control DMX levels; and to act as an RDM controller. It is provided by ETC Inc without any warranty, in the hope that it is a useful tool.
 
-# Supported Platforms and DMX Devices
-To interface to a DMX/RDM system, ETCDmxTool supports two USB devices - the ETC Gadget II and the ETC-USB whip. The features available differ slightly depending on the selected device:
+# Supported DMX Devices
+To interface to a DMX/RDM system, ETCDmxTool supports three USB devices - the ETC Gadget I, the ETC Gadget II and the ETC USB Whip. The features available differ slightly depending on the selected device:
 
-| Feature              | USB Whip | Gadget II                           |
-|----------------------|----------|-------------------------------------|
-| DMX/RDM Data Capture | Yes      | Yes (Needs Firmware 1.2.0 or above) |
-| DMX Output           | Yes      | Yes                                 |
-| RDM Controller       | No       | Yes                                 |
+| Feature              | USB Whip           | Gadget I<sup>1</sup> | Gadget II<sup>1</sup>           |
+|----------------------|--------------------|----------------------|---------------------------------|
+| DMX/RDM Data Capture | :heavy_check_mark: | :x:                  | :heavy_check_mark: <sup>2</sup> |
+| DMX Output           | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:              |
+| RDM Controller       | :x:                | :heavy_check_mark:   | :heavy_check_mark:              |
 
+<sup>1</sup> Windows Only  
+<sup>2</sup> Firmware v1.2.0 or above
+
+# Supported Platforms
 ## Windows
 ETCDmxTool supports Windows (Win 7/Win 10) only.
 
-| Hardware      | Windows Support |
-|---------------|-----------------|
-| USB Whip      | Yes             |
-| Gadget I      | Yes?            |
-| Gadget II     | Yes             |
-
 ## Linux
-ETCDmxTool also supports Linux, but only certain hardware currently.
+ETCDmxTool also supports Linux, but only certain hardware currently (see the table above).
 
-| Hardware      | Linux Support |
-|---------------|---------------|
-| USB Whip      | Yes           |
-| Gadget I      | Not yet       |
-| Gadget II     | Not yet       |
-
-### Permissions
-Read/write access is required to the relevant USB bus device
-For systems that support udev, this can be applyed by copying "linux/99-etcusb.rules" to /etc/udev
+For help with configuring on Linux, please see the [Linux readme](linux/README.md).
 
 # Connecting to a system
-In order to sniff DMX/RDM, you will need to wire your Gadget2 in to your system in a slighly unusual way using male-male XLR connectors or similar. Below is an example of how this might be set up.
+In order to sniff DMX/RDM, you will need to wire your DMX device in to your system in a slighly unusual way using male-male XLR connectors or similar. Below is an example of how this might be set up.
 
 ![How to sniff graphic](./doc/HowToSniff.png)
 
