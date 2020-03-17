@@ -170,14 +170,20 @@ bool FileOpen::loadGoddardDesigns(QFile* file)
     file->seek(0);
     QTextStream fileStream(file);
 
-    if (!fileStream.readLine().startsWith("Timestamp")) return false;
+    QString headerLine = fileStream.readLine();
+
+    if (!headerLine.startsWith("Timestamp", Qt::CaseInsensitive)) return false;
 
     // Find data column
     int dataCol = -1;
-    QStringList header = fileStream.readLine().split(',');
+    QStringList header = headerLine.split(',');
     for (int i=0; i<header.count(); ++i)
     {
-        if (header.at(i).contains("Data")) dataCol = i;
+        if (header.at(i).contains("Data", Qt::CaseInsensitive))
+        {
+            dataCol = i;
+            break;
+        }
     }
     if (dataCol == -1) return false;
 
@@ -186,10 +192,10 @@ bool FileOpen::loadGoddardDesigns(QFile* file)
     while(!line.isNull())
     {
         Packet p = QByteArray::fromHex(line.section(',', dataCol, dataCol).toLatin1());
-        p.timestamp = line.section(',', 0, 0).toFloat() / 1000000;  // Microseconds
 
         if (p.size() > 0)
         {
+            p.timestamp = static_cast<qint64>(line.section(',', 0, 0).toFloat() / 1000000.f);  // Microseconds
             m_packetTable->appendPacket(p);
         }
         line = fileStream.readLine();
