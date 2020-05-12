@@ -17,7 +17,9 @@ To interface to a DMX/RDM system, ETCDmxTool supports three USB devices - the ET
 
 # Supported Platforms
 ## Windows
-ETCDmxTool supports Windows (Win 7/Win 10) only.
+ETCDmxTool is supported on Windows (Win 7/Win 10).
+
+An installer is provided on the [release page](https://github.com/ETCLabs/ETCDmxTool/releases/latest/)
 
 ## Linux
 ETCDmxTool also supports Linux, but only certain hardware currently (see the table above).
@@ -29,8 +31,6 @@ In order to sniff DMX/RDM, you will need to wire your DMX device in to your syst
 
 ![How to sniff graphic](./doc/HowToSniff.png)
 
-# Installation
-An installer for the application is coming soon!
 
 # Building
 If you are interested in building the application you will need the following:
