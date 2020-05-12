@@ -808,7 +808,7 @@ bool MainWindow::openFile(QString filename)
     ui.treeWidget->clear();
     ui.textEdit->clear();
 
-    FileOpen *f = new FileOpen(filename);
+    FileOpen *f = new FileOpen(m_packetTable, filename);
     QThread *fileOpenThread = new QThread(this);
     f->moveToThread(fileOpenThread);
     fileOpenThread->start();
@@ -821,10 +821,6 @@ bool MainWindow::openFile(QString filename)
     }, Qt::QueuedConnection);
     connect(f, &FileOpen::Finished, this, [=]() {
         QApplication::restoreOverrideCursor();
-        // Copy the packets into the table here - has to be in main thread, table models not threadsafe
-        QList<Packet> packetList = f->getPacketList();
-        foreach(auto p, packetList)
-            m_packetTable.appendPacket(p);
         if (ui.tableView->model()->rowCount())
             ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
         f->deleteLater();
