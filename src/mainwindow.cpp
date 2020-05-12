@@ -284,6 +284,8 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     m_filterLabel->setText(tr("Search  "));
 	
     m_filterColumnCombo = new QComboBox();
+    m_filterColumnCombo->addItem(tr("Source"));
+    m_filterColumnCombo->addItem(tr("Destination"));
     m_filterColumnCombo->addItem(tr("Protocol"));
     m_filterColumnCombo->addItem(tr("Information"));
 
@@ -823,6 +825,7 @@ bool MainWindow::openFile(QString filename)
         QApplication::restoreOverrideCursor();
         if (ui.tableView->model()->rowCount())
             ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
+        setWindowTitle(filename);
         f->deleteLater();
     }, Qt::QueuedConnection);
 
@@ -918,10 +921,16 @@ void MainWindow::setFilterColumn(int index)
 {
 	switch(index)
 	{
-	case 0:
+    case 0:
+        m_filterProxy->setFilterKeyColumn(PacketTable::Source);
+        break;
+    case 1:
+        m_filterProxy->setFilterKeyColumn(PacketTable::Destination);
+        break;
+    case 2:
 		m_filterProxy->setFilterKeyColumn(PacketTable::Protocol);
 		break;
-	case 1:
+    case 3:
 		m_filterProxy->setFilterKeyColumn(PacketTable::Info);
 		break;
 	}
@@ -1627,4 +1636,61 @@ void MainWindow::on_tbSaveLog_pressed()
         return;
     }
     LogModel::getInstance()->saveFile(&file);
+}
+
+void MainWindow::on_actionCaptureInfo_triggered()
+{
+    QDialog dialog(this);
+    dialog.setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+    dialog.setWindowTitle(tr("Capture Statistics"));
+    QPlainTextEdit edit(&dialog);
+    edit.appendPlainText(tr("%1 Total Packets").arg(m_packetTable.rowCount()));
+    QVBoxLayout layout;
+    dialog.setLayout(&layout);
+    layout.addWidget(&edit);
+
+
+    edit.appendPlainText("\n\n*********** Protocols *************");
+    QSet<QString> m_uniqueIds;
+    QHash<QString, int> packetCountHash;
+    for(int row=0; row<m_packetTable.rowCount(); row++)
+    {
+        QString protocol = m_packetTable.data(m_packetTable.index(row, PacketTable::Protocol), Qt::DisplayRole).toString();
+
+        if(packetCountHash.contains(protocol))
+        {
+            int value = packetCountHash[protocol] + 1;
+            packetCountHash[protocol] = value;
+        }
+        else
+        {
+            packetCountHash[protocol] = 1;
+        }
+        m_uniqueIds.insert(m_packetTable.data(m_packetTable.index(row, PacketTable::Source), Qt::DisplayRole).toString());
+        m_uniqueIds.insert(m_packetTable.data(m_packetTable.index(row, PacketTable::Destination), Qt::DisplayRole).toString());
+    }
+
+    QHashIterator<QString, int> i(packetCountHash);
+    while(i.hasNext())
+    {
+        i.next();
+        edit.appendPlainText(QString("%1 : %2")
+                             .arg(i.key())
+                             .arg(i.value()));
+    }
+
+    edit.appendPlainText("\n\n*********** Unique IDs *************");
+
+    QStringList idList;
+    foreach(QString s, m_uniqueIds)
+        idList << s;
+    idList.sort();
+    foreach(QString s, idList)
+        edit.appendPlainText(s);
+
+    edit.moveCursor(QTextCursor::Start);
+
+    dialog.exec();
+
+
 }

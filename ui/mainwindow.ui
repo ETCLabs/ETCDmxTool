@@ -330,7 +330,7 @@ QToolButton:disabled
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="snifferPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1284,6 +1284,7 @@ QProgressBar::chunk
     <addaction name="actionStop_Capture"/>
     <addaction name="actionRestart_Capture"/>
     <addaction name="menuTimestamp_Display"/>
+    <addaction name="actionCaptureInfo"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1517,6 +1518,11 @@ QProgressBar::chunk
   <action name="actionUpdateGadget">
    <property name="text">
     <string>Update Gadget2...</string>
+   </property>
+  </action>
+  <action name="actionCaptureInfo">
+   <property name="text">
+    <string>Capture Info</string>
    </property>
   </action>
  </widget>
