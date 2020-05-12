@@ -119,9 +119,12 @@ QVariant RdmPlugin::getInfo(const Packet &p)
                 // Append the search address info
                 quint64 lowerBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA);
                 quint64 upperBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA + RDM_UID_LENGTH);
-                sInfo.append(QString(" from %1 to %2")
+                quint64 searchLength = 1+upperBound-lowerBound;
+                sInfo.append(QString(" from %1 to %2 (%3 address%4)")
                              .arg(formatRdmUid(lowerBound, false))
-                             .arg(formatRdmUid(upperBound, false)));
+                             .arg(formatRdmUid(upperBound, false))
+                             .arg(QLocale().toString(searchLength))
+                             .arg(searchLength > 1 ? "es" : ""));
 
             }
         }
