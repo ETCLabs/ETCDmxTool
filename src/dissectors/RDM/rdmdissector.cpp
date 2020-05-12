@@ -129,7 +129,7 @@ QString manufNameFromId(quint16 manuf)
     return manufMap.value(manuf);
 }
 
-QString formatRdmUid(quint64 value)
+QString formatRdmUid(quint64 value, bool addManufName)
 {
 	quint16 manuf;
 	quint32 deviceid;
@@ -142,11 +142,18 @@ QString formatRdmUid(quint64 value)
             .arg(deviceid, 8, 16, QChar('0'))
             .toUpper();
 
-    QString manufName = manufNameFromId(manuf);
+    if(addManufName)
+    {
+        QString manufName = manufNameFromId(manuf);
 
-    if (manufName.isEmpty()) return result;
+        if (manufName.isEmpty()) return result;
 
-    return result % " (" % manufName % ")";
+        return result % " (" % manufName % ")";
+    }
+    else
+    {
+        return result;
+    }
 }
 
 void dissectDeviceInfoReply(const Packet &p, QTreeWidgetItem *parent, int offset)
@@ -988,10 +995,10 @@ void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
     Util::setPacketByteHighlight(i, 0, index);
 	parent->addChild(i);
 
-	if(p.length() - index != 17)
+    if(p.length() - index < 17)
 	{
 		i = new QTreeWidgetItem();
-		i->setText(0, "Invalid Response - wrong length");
+        i->setText(0, "Invalid Response - too short");
         Util::setPacketByteHighlight(i, index, p.length());
 		parent->addChild(i);
 		return;

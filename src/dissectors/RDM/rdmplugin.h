@@ -40,6 +40,9 @@ public:
     QVariant getInfo(const Packet &p) override;
     int preprocessPacket(const Packet &p, QList<Packet> &list) override;
     void dissectPacket(const Packet &p, QTreeWidgetItem *parent) override;
+
+private:
+    bool quickValidateDiscoveryResponse(const Packet &p, quint64 &decoded_id);
 };
 
 #endif // DMX_H

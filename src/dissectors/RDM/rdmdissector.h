@@ -68,5 +68,5 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent);
 
 quint64 unpackRdmId(const Packet &p, int start);
 
-
+QString formatRdmUid(quint64 value, bool addManufName = true);
 
