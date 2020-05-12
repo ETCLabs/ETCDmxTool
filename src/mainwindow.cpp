@@ -42,6 +42,7 @@
 #include <QDragLeaveEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QSettings>
 
 #include <qscrollbar.h>
 #include "fancysliderstyle.h"
@@ -762,8 +763,11 @@ void MainWindow::updateTreeWidget(int currentRow)
 
 void MainWindow::on_actionSave_File_triggered()
 {
-	QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", QString(), "Text Files (*.txt)");
+    QSettings settings;
+    QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+    QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", defaultPath, "Text Files (*.txt)");
 	if(filename.isEmpty()) return;
+    settings.setValue("textPath", filename);
 
     FileSave *f = new FileSave(m_packetTable, filename);
     QThread *fileSaveThread = new QThread(this);
@@ -786,14 +790,17 @@ void MainWindow::on_actionSave_File_triggered()
 
 void MainWindow::on_actionOpen_File_triggered()
 {
-	QString filename = QFileDialog::getOpenFileName(this, "Open File", QString(), "Text Files (*.txt)");
-    openFile(filename);
+    QSettings settings;
+    QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+    QString filename = QFileDialog::getOpenFileName(this, "Open File", defaultPath, "Text Files (*.txt)");
+    if(openFile(filename))
+        settings.setValue("textPath", filename);
 }
 
-void MainWindow::openFile(QString filename)
+bool MainWindow::openFile(QString filename)
 {
-    if (filename.isEmpty()) return;
-    if (!QFileInfo::exists(filename)) return;
+    if (filename.isEmpty()) return false;
+    if (!QFileInfo::exists(filename)) return false;
 
     // Stop any capture and Clear old
     stopCapture();
@@ -801,7 +808,7 @@ void MainWindow::openFile(QString filename)
     ui.treeWidget->clear();
     ui.textEdit->clear();
 
-    FileOpen *f = new FileOpen(m_packetTable, filename);
+    FileOpen *f = new FileOpen(filename);
     QThread *fileOpenThread = new QThread(this);
     f->moveToThread(fileOpenThread);
     fileOpenThread->start();
@@ -814,6 +821,10 @@ void MainWindow::openFile(QString filename)
     }, Qt::QueuedConnection);
     connect(f, &FileOpen::Finished, this, [=]() {
         QApplication::restoreOverrideCursor();
+        // Copy the packets into the table here - has to be in main thread, table models not threadsafe
+        QList<Packet> packetList = f->getPacketList();
+        foreach(auto p, packetList)
+            m_packetTable.appendPacket(p);
         if (ui.tableView->model()->rowCount())
             ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
         f->deleteLater();
@@ -821,6 +832,7 @@ void MainWindow::openFile(QString filename)
 
 
     QMetaObject::invokeMethod(f, "doRead", Qt::QueuedConnection);
+    return true;
 }
 
 #define INDEXCOL_WIDTH 6
@@ -1192,8 +1204,11 @@ void MainWindow::updateRdmDisplay()
 
 void MainWindow::on_actionExport_to_PcapNg_triggered()
 {
-	QString filename = QFileDialog::getSaveFileName(this, tr("Export to PcapNg"), QString(), "pcapng (*.pcapng)");
+    QSettings settings;
+    QString defaultPath = settings.value("pcapPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+    QString filename = QFileDialog::getSaveFileName(this, tr("Export to PcapNg"), QString(defaultPath), "pcapng (*.pcapng)");
 	if(filename.isEmpty()) return;
+    settings.setValue("pcapPath", filename);
 
 	QFile file(filename);
 	bool ok = file.open(QIODevice::WriteOnly);

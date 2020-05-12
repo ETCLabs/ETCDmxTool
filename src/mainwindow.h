@@ -98,7 +98,7 @@ private:
     Q_SIGNAL void updateStatusBarMsg();
     Q_SLOT void doUpdatetStatusBarMsg();
     bool isValidMimeData(const QMimeData* mimeData);
-    void openFile(QString fileName);
+    bool openFile(QString fileName);
 
 protected:
     virtual void resizeEvent(QResizeEvent *e);
