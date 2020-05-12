@@ -1691,6 +1691,14 @@ void MainWindow::on_actionCaptureInfo_triggered()
     edit.moveCursor(QTextCursor::Start);
 
     dialog.exec();
+}
 
 
+void MainWindow::on_actionDiscardDMX_triggered()
+{
+    int result = QMessageBox::question(this, tr("Discard DMX Data"), tr("This will discard all DMX packets - are you sure?"));
+    if(result == QMessageBox::Yes)
+    {
+        m_packetTable.discardDmxData();
+    }
 }

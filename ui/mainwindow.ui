@@ -1285,6 +1285,7 @@ QProgressBar::chunk
     <addaction name="actionRestart_Capture"/>
     <addaction name="menuTimestamp_Display"/>
     <addaction name="actionCaptureInfo"/>
+    <addaction name="actionDiscardDMX"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1521,8 +1522,21 @@ QProgressBar::chunk
    </property>
   </action>
   <action name="actionCaptureInfo">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/MainWindow/info.png</normaloff>:/MainWindow/info.png</iconset>
+   </property>
    <property name="text">
     <string>Capture Info</string>
+   </property>
+  </action>
+  <action name="actionDiscardDMX">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/MainWindow/erase_dmx.png</normaloff>:/MainWindow/erase_dmx.png</iconset>
+   </property>
+   <property name="text">
+    <string>Discard DMX Data</string>
    </property>
   </action>
  </widget>

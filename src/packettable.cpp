@@ -175,3 +175,17 @@ QString PacketTable::formatTime(quint64 time, quint64 previous, quint64 start) c
 
     return QString::number(time);
 }
+
+void PacketTable::discardDmxData()
+{
+    beginResetModel();
+
+    QMutableListIterator<Packet>i(m_packets);
+    while(i.hasNext())
+    {
+        Packet p = i.next();
+        if(p.at(0)==00)
+            i.remove();
+    }
+    endResetModel();
+}

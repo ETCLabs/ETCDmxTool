@@ -77,6 +77,7 @@ public:
     }
     TIMEFORMAT timeFormat() const { return m_timeFormat;}
 
+    void discardDmxData();
 signals:
     void newPacket();
     void timeFormatChange();

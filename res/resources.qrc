@@ -21,6 +21,8 @@
         <file>dmxgrid_dis.png</file>
         <file>dmxgrid_en.png</file>
         <file>dmxgrid_off.png</file>
+        <file>erase_dmx.png</file>
+        <file>info.png</file>
     </qresource>
     <qresource prefix="/">
         <file alias="estaid.csv">estaid.csv</file>
