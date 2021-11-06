@@ -43,6 +43,7 @@ INCLUDEPATH += src/ \
     RDM/
 
 HEADERS += src/e110_startcodes.h \
+    src/e110_mfctrIDs.h \
     src/rdm/estardm.h \
     src/rdm/rdmcontroller.h \
     src/rdm/rdmEtcConsts.h \
