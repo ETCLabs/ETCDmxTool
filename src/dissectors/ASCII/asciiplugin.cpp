@@ -84,14 +84,14 @@ int ASCIIPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)
 
 void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 {
-    QTreeWidgetItem *i = new QTreeWidgetItem();
+    QTreeWidgetItem *i = nullptr;
 
     parent->setText(0, getProtocolName().toString());
     Util::setPacketByteHighlight(parent, 0, p.size());
 
     if (p.size() < idxMinLength)
     {
-        QTreeWidgetItem *i = new QTreeWidgetItem();
+        i = new QTreeWidgetItem();
         i->setText(0, "Too Short");
         i->setText(1, QString::number(p.size()));
         Util::setPacketByteHighlight(i, 0, p.size());
