@@ -61,15 +61,17 @@ QVariant ASCIIPlugin::getSource(const Packet &p)
 QVariant ASCIIPlugin::getDestination(const Packet &p)
 {
     Q_UNUSED(p);
-    return QString("Broadcast");
+    return QObject::tr("Broadcast");
 }
 
 QVariant ASCIIPlugin::getInfo(const Packet &p)
 {
+    if (!p.size())
+        return tr("Invalid");
     switch (static_cast<quint8>(p.at(0)))
     {
         case E110_SC::ASCII_TEXT:
-            return QString::fromLatin1(p.data() + idxText, p.size() - idxText);
+            return getText(p);
 
         default:
             return tr("Unknown");
@@ -132,19 +134,14 @@ void ASCIIPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 
     i = new QTreeWidgetItem();
     i->setText(0, QObject::tr("String"));
-    QString strValue = "";
-    switch (static_cast<quint8>(p.at(idxStartCode)))
-    {
-        case E110_SC::ASCII_TEXT:
-            strValue = QString::fromLatin1(p.data() + idxText, p.size() - idxText);
-            break;
-
-        default:
-            break;
-    }
-    i->setText(1, strValue);
-    Util::setPacketByteHighlight(i, 3, std::min(strValue.length(), p.size() - idxText));
+    i->setText(1, getText(p));
+    Util::setPacketByteHighlight(i, idxText, getText(p).length());
     parent->addChild(i);
 }
 
-
+QString ASCIIPlugin::getText(const Packet &p)
+{
+    if (p.size() < idxText)
+        return QString();
+    return QString::fromLatin1(p.data() + idxText, p.size() - idxText);
+}
