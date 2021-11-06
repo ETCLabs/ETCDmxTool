@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Electronic Theatre Controls, Inc., http://www.etcconnect.com
+// Copyright (c) 2018 Electronic Theatre Controls, Inc., http://www.etcconnect.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,27 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#ifndef E120_STARTCODES_H
-#define E120_STARTCODES_H
+#ifndef UTF8_H
+#define UTF8_H
 
-namespace E110_SC {
-    enum  {
-        DIMMER_DATA = 0x00,
-        ASCII_TEXT = 0x17,
-        UTF8_TEXT = 0x90,
-        RDM = 0xCC,
-        RDM_DSC_RESPONSE = 0xFE,
+#include <QObject>
+#include <QtPlugin>
+#include "dissectors/dissectorplugin.h"
 
-        // Electronic Theatre Controls
-        NONOFFICIAL_ETC_FIXLINK = 0x45,
+class UTF8Plugin : public QObject, DissectorPlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID DissectorPlugin_iid)
+    Q_INTERFACES(DissectorPlugin)
 
-        // Goldern Sea/Highend Systems
-        NONOFFICIAL_HIGHEND_NOOP = 0xA8,
-        NONOFFICIAL_HIGHEND_UPDATE_HEADER = 0xA9,
-        NONOFFICIAL_HIGHEND_UPDATE_DATA = 0xAA
-    };
-}
+public:
+    QVariant getProtocolName() override;
+    bool enableByDefault() override;
+    QList<quint8> getStartCodes() override;
+    QVariant getSource(const Packet &p) override;
+    QVariant getDestination(const Packet &p) override;
+    QVariant getInfo(const Packet &p) override;
+    int preprocessPacket(const Packet &p, QList<Packet> &list) override;
+    void dissectPacket(const Packet &p, QTreeWidgetItem *parent) override;
 
-#endif // E120_STARTCODES_H
+private:
+    QString getText(const Packet &p);
+};
 
-
+#endif // UTF8_H
