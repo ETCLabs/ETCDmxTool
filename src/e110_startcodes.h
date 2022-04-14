@@ -26,6 +26,7 @@ namespace E110_SC {
         DIMMER_DATA = 0x00,
         ASCII_TEXT = 0x17,
         RDM = 0xCC,
+        SIP = 0xCF,
         RDM_DSC_RESPONSE = 0xFE,
 
         // Electronic Theatre Controls
