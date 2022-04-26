@@ -175,7 +175,7 @@ int RdmPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)
 
 void RdmPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 {
-    QTreeWidgetItem *i = new QTreeWidgetItem();
+    QTreeWidgetItem *i = nullptr;
 
     parent->setText(0, getProtocolName().toString());
     Util::setPacketByteHighlight(parent, 0, p.size());
