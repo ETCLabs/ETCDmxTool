@@ -284,27 +284,42 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     m_filterLabel->setText(tr("Search  "));
 	
     m_filterColumnCombo = new QComboBox();
-    m_filterColumnCombo->addItem(tr("Source"));
-    m_filterColumnCombo->addItem(tr("Destination"));
-    m_filterColumnCombo->addItem(tr("Protocol"));
-    m_filterColumnCombo->addItem(tr("Information"));
+    m_filterColumnCombo->addItem(tr("Source"), PacketTable::COLUMNS::Source);
+    m_filterColumnCombo->addItem(tr("Destination"), PacketTable::COLUMNS::Destination);
+    m_filterColumnCombo->addItem(tr("Protocol"), PacketTable::COLUMNS::Protocol);
+    m_filterColumnCombo->addItem(tr("Information"), PacketTable::COLUMNS::Info);
 
     m_filterCombo = new QComboBox();
     m_filterCombo->addItem("*");
     m_filterCombo->setEditable(true);
     m_filterCombo->setMinimumContentsLength(10);
 
+    m_filterModeCombo = new QComboBox();
+    m_filterModeCombo->addItem(tr("Wildcard"), QRegExp::Wildcard);
+    m_filterModeCombo->addItem(tr("RegEx"), QRegExp::RegExp);
 
     ui.snifferToolsLayout->addSpacerItem(new QSpacerItem(100, 0, QSizePolicy::Expanding));
     ui.snifferToolsLayout->addWidget(m_filterLabel);
     ui.snifferToolsLayout->addWidget(m_filterColumnCombo);
     ui.snifferToolsLayout->addWidget(m_filterCombo);
+    ui.snifferToolsLayout->addWidget(m_filterModeCombo);
 
-    connect(m_filterCombo, SIGNAL(activated(QString)),
-            this, SLOT(updateFilterString(QString)));
-	
-    connect(m_filterColumnCombo, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(setFilterColumn(int)));
+    connect(m_filterCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated),
+            this, [=](int index) {
+                Q_UNUSED(index);
+                this->updateFilterPattern(this->m_filterCombo->currentText(), this->m_filterModeCombo->currentData().toInt());
+            });
+    connect(m_filterModeCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, [=](int index) {
+                Q_UNUSED(index);
+                this->updateFilterPattern(this->m_filterCombo->currentText(), this->m_filterModeCombo->currentData().toInt());
+            });
+
+    connect(m_filterColumnCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, [=](int index) {
+                Q_UNUSED(index);
+                this->setFilterColumn(this->m_filterColumnCombo->currentData().toUInt());
+            });
 
     ui.stackedWidget->setCurrentIndex(0);
     ui.rdmProgressBar->setVisible(false);
@@ -891,15 +906,16 @@ void MainWindow::on_treeWidget_currentItemChanged( QTreeWidgetItem * current, QT
     }
 }
 
-void MainWindow::updateFilterString(const QString &filterText)
+void MainWindow::updateFilterPattern(const QString &pattern, int PatternSyntax)
 {
-    if (filterText == "*")
-    {
-        m_filterProxy->setFilterWildcard(QString());
-        return;
+    if (PatternSyntax == QRegExp::RegExp) {
+        m_filterProxy->setFilterRegExp(pattern);
+    } else if (PatternSyntax == QRegExp::Wildcard) {
+        if (pattern == "*")
+            m_filterProxy->setFilterWildcard(QString());
+        else
+            m_filterProxy->setFilterWildcard(pattern);
     }
-
-    m_filterProxy->setFilterWildcard(filterText);
 }
 
 void MainWindow::selectionChanged(const QModelIndex &current, const QModelIndex &previous)
@@ -917,23 +933,10 @@ void MainWindow::on_actionAbout_triggered()
                        .arg(Gadget2_GetDllVersion()));
 }
 
-void MainWindow::setFilterColumn(int index)
+void MainWindow::setFilterColumn(unsigned int column)
 {
-	switch(index)
-	{
-    case 0:
-        m_filterProxy->setFilterKeyColumn(PacketTable::Source);
-        break;
-    case 1:
-        m_filterProxy->setFilterKeyColumn(PacketTable::Destination);
-        break;
-    case 2:
-		m_filterProxy->setFilterKeyColumn(PacketTable::Protocol);
-		break;
-    case 3:
-		m_filterProxy->setFilterKeyColumn(PacketTable::Info);
-		break;
-	}
+    if (column < PacketTable::COLCOUNT)
+        m_filterProxy->setFilterKeyColumn(column);
 }
 
 void MainWindow::crossFaderMoved()
