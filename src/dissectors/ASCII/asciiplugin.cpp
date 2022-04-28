@@ -64,10 +64,17 @@ QVariant ASCIIPlugin::getDestination(const Packet &p)
     return QObject::tr("Broadcast");
 }
 
-QVariant ASCIIPlugin::getInfo(const Packet &p)
+QVariant ASCIIPlugin::getInfo(const Packet &p, int role)
 {
-    if (!p.size())
-        return tr("Invalid");
+    if (!p.size()) {
+        if (role == Qt::DisplayRole)
+            return tr("Invalid");
+        else if (role == Qt::BackgroundColorRole)
+            return Packet::Invalid::INVALID_PACKET_BACKGROUND;
+    }
+
+    if (role != Qt::DisplayRole)
+        return QVariant();
     switch (static_cast<quint8>(p.at(0)))
     {
         case E110_SC::ASCII_TEXT:

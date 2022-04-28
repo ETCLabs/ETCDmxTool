@@ -61,7 +61,7 @@ public:
     /*
      * @return Get packet info
      */
-    virtual QVariant getInfo(const Packet &p) = 0;
+    virtual QVariant getInfo(const Packet &p, int role = Qt::DisplayRole) = 0;
 
     /*
      * Process packet and add to list
