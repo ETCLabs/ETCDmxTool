@@ -26,7 +26,8 @@ namespace CompressedFile {
     static int DataStreamVersion = QDataStream::Qt_5_10;
     static QString MagicHeader = "ETCDMXTool";
     typedef enum : quint16 {
-        Version_0
+        Version_0,
+        Version_1 // Removed isRdmCollision from stream
     } versions_t;
     QDataStream& operator >>(QDataStream& ds, versions_t& e)
     {
@@ -136,10 +137,15 @@ bool FileOpen::loadCompressed(QFile* file)
         switch (version)
         {
             case CompressedFile::Version_0:
+            case CompressedFile::Version_1:
             {
                 Packet p;
                 QByteArray compressedArr;
-                fileStream >> p.timestamp >> p.isRdmCollision >> compressedArr;
+                bool isRdmCollision;
+                if (version == CompressedFile::Version_0)
+                    fileStream >> p.timestamp >> isRdmCollision >> compressedArr;
+                else if (version == CompressedFile::Version_1)
+                    fileStream >> p.timestamp >> compressedArr;
                 p.append(qUncompress(compressedArr));
                 if (fileStream.status() == QDataStream::Ok)
                     m_packetTable->appendPacket(p);
@@ -227,7 +233,7 @@ FileSave::FileSave(PacketTable &packetTable, QString fileName, format_t fileForm
     {
         QDataStream fileStream(m_file);
         fileStream.setVersion(CompressedFile::DataStreamVersion);
-        fileStream << CompressedFile::MagicHeader << CompressedFile::Version_0;
+        fileStream << CompressedFile::MagicHeader << CompressedFile::Version_1;
     }
 }
 
@@ -251,7 +257,7 @@ void FileSave::writePacket(QTextStream &fileStream, const Packet &packet)
 
 void FileSave::writePacket(QDataStream &fileStream, const Packet &packet)
 {
-    fileStream << packet.timestamp << packet.isRdmCollision << qCompress(packet);
+    fileStream << packet.timestamp << qCompress(packet);
 }
 
 void FileSave::writeTable()
