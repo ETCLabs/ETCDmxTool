@@ -20,6 +20,7 @@
 
 #include "levelindicator.h"
 #include <QPainter>
+#include <QPainterPath>
 
 LevelIndicator::LevelIndicator(QWidget *parent) : QWidget(parent) , m_value(0)
 {

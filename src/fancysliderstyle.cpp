@@ -22,6 +22,7 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QStyleOptionSlider>
+#include <QPainterPath>
 
 void FancyFaderStyle::drawComplexControl(ComplexControl control, const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const
 {
