@@ -78,8 +78,8 @@ public slots:
     void on_actionCaptureInfo_triggered();
     void on_actionDiscardDMX_triggered();
 private slots:
-    void updateFilterString(const QString &filterText);
-	void setFilterColumn(int index);
+    void updateFilterPattern(const QString &pattern, int PatternSyntax = QRegExp::Wildcard);
+    void setFilterColumn(unsigned int column);
     void selectionChanged(const QModelIndex &current, const QModelIndex &previous);
     void faderMoved(int value);
     void updateTxLevels();
@@ -172,6 +172,7 @@ private:
     QLabel *m_filterLabel;
     QComboBox *m_filterColumnCombo;
     QComboBox *m_filterCombo;
+    QComboBox *m_filterModeCombo;
 
     QList<QSlider *> m_scene1sliders;
     QList<QLabel *> m_scene1faderLabels;
