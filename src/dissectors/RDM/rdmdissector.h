@@ -62,9 +62,14 @@ enum RDM_PACKET_STRUCT
     RDM_PACKET_MAX_BYTES = 257
 };
 
-void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent);
+typedef enum {
+    FRAME_VALID,
+    FRAME_INVALID
+} dissectRdm_t;
 
-void dissectRdm(const Packet &p, QTreeWidgetItem *parent);
+dissectRdm_t dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent);
+
+dissectRdm_t dissectRdm(const Packet &p, QTreeWidgetItem *parent);
 
 quint64 unpackRdmId(const Packet &p, int start);
 

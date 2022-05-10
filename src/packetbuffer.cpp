@@ -20,31 +20,30 @@
 
 #include <packetbuffer.h>
 
+const QColor Packet::Invalid::INVALID_PACKET_BACKGROUND = QColor(255, 80, 80);
+const QColor Packet::Invalid::INVALID_PARAMETER_BACKGROUND = QColor(255, 80, 80);
+
 Packet::Packet()
     : QByteArray()
     , timestamp(0)
-    , isRdmCollision(false)
 {
 }
 
 Packet::Packet(const char* data, int size)
     : QByteArray(data, size)
     , timestamp(0)
-    , isRdmCollision(false)
 {
 }
 
 Packet::Packet(const QByteArray &data)
     : QByteArray(data)
     , timestamp(0)
-    , isRdmCollision(false)
 {
 }
 
 Packet::Packet(const Packet &other, int start)
     : QByteArray()
     , timestamp(other.timestamp)
-    , isRdmCollision(other.isRdmCollision)
 {
     append(other.mid(start));
 }

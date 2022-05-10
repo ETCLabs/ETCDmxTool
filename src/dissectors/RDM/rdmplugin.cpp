@@ -27,6 +27,8 @@
 
 #include "rdmdissector.h"
 
+const QColor RdmPlugin::DISCOVERY_COLLISION_BACKGROUND = QColor(204, 153, 0);
+
 
 QVariant RdmPlugin::getProtocolName()
 {
@@ -77,17 +79,17 @@ QVariant RdmPlugin::getDestination(const Packet &p)
     }
 }
 
-QVariant RdmPlugin::getInfo(const Packet &p)
+QVariant RdmPlugin::getInfo(const Packet &p, int role)
 {
     QString sInfo;
+    QVariant cInfo;
 
     if (p[0]==E110_SC::RDM)
     {
-        if(p.length() < RDM_MIN_BYTES)
+        if(p.length() < RDM_MIN_BYTES) {
             sInfo = "TOO SHORT: " + QString::number(p.length()) + " bytes";
-        else
-        {
-
+            cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
+        } else {
             switch(p[RDM_MESSAGE_BLOCK + RDM_CC])
             {
             case E120_DISCOVERY_COMMAND:
@@ -121,26 +123,40 @@ QVariant RdmPlugin::getInfo(const Packet &p)
                 quint64 upperBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA + RDM_UID_LENGTH);
                 quint64 searchLength = 1+upperBound-lowerBound;
                 sInfo.append(QString(" from %1 to %2 (%3 address%4)")
-                             .arg(formatRdmUid(lowerBound, false))
-                             .arg(formatRdmUid(upperBound, false))
-                             .arg(QLocale().toString(searchLength))
-                             .arg(searchLength > 1 ? "es" : ""));
+                             .arg(
+                                 formatRdmUid(lowerBound, false),
+                                 formatRdmUid(upperBound, false),
+                                 QLocale().toString(searchLength),
+                                 searchLength > 1 ? "es" : ""));
 
             }
+
+            {
+                // Validate packet
+                QTreeWidgetItem dummyWidgetItem;
+                if (dissectRdm(p, &dummyWidgetItem) == FRAME_INVALID)
+                    cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
+            }
         }
+
     }
     else
     {
         // Discovery Response
-        sInfo = "DISCOVERY DISC_UNIQUE_BRANCH RESPONSE - ";
+        sInfo = "DISCOVERY DISC_UNIQUE_BRANCH RESPONSE";
         quint64 decodedId;
-        if(quickValidateDiscoveryResponse(p, decodedId))
-            sInfo.append("VALID");
-        else
-            sInfo.append("INVALID");
+        if(!quickValidateDiscoveryResponse(p, decodedId))
+            cInfo = DISCOVERY_COLLISION_BACKGROUND;
     }
 
-    return sInfo;
+    switch (role) {
+    case Qt::DisplayRole:
+        return sInfo;
+    case Qt::BackgroundRole:
+        return cInfo;
+    default:
+        return QVariant();
+    }
 }
 
 int RdmPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)
@@ -175,7 +191,7 @@ int RdmPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)
 
 void RdmPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 {
-    QTreeWidgetItem *i = new QTreeWidgetItem();
+    QTreeWidgetItem *i = nullptr;
 
     parent->setText(0, getProtocolName().toString());
     Util::setPacketByteHighlight(parent, 0, p.size());

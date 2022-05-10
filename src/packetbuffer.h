@@ -22,6 +22,7 @@
 
 #include <QObject>
 #include <exception>
+#include <QColor>
 
 struct PacketAccessException : public std::exception {
    const char * what () const throw () {
@@ -39,6 +40,12 @@ public:
     Packet(const Packet &other, int start = 0);
 
     qint64 timestamp;
-    bool isRdmCollision;
     unsigned char operator[] ( int i ) const;
+
+    class Invalid
+    {
+    public:
+       static const QColor INVALID_PACKET_BACKGROUND;
+       static const QColor INVALID_PARAMETER_BACKGROUND;
+    };
 };

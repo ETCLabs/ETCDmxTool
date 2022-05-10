@@ -105,7 +105,7 @@ QVariant PacketTable::data(const QModelIndex &index, int role) const
             if (role == Qt::DisplayRole) return dissector->getProtocolName();
             break;
         case Info       :
-            if (role == Qt::DisplayRole) return dissector->getInfo(m_packets.at(row));
+            return dissector->getInfo(m_packets.at(row), role);
             break;
         default:;
         }

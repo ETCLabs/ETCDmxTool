@@ -110,24 +110,40 @@ QVariant SIPPlugin::getDestination(const Packet &p)
     return QString("Broadcast");
 }
 
-QVariant SIPPlugin::getInfo(const Packet &p)
+QVariant SIPPlugin::getInfo(const Packet &p, int role)
 {
     switch (static_cast<quint8>(p.at(0)))
     {
         case E110_SC::SIP:
             if (p.length() >= idxMinLength) {
                 auto sequenceNum = static_cast<uint8_t>(p.at(idxSequence));
-                return QString("Sequence %1 %2")
-                        .arg(
-                            QString::number(sequenceNum),
-                            validateChecksum(p) ? "" : "[Checksum error]");
+                bool checksumOk = validateChecksum(p);
+                if (role == Qt::DisplayRole) {
+                    return QString("Sequence %1 %2")
+                            .arg(
+                                QString::number(sequenceNum),
+                                checksumOk ? "" : "[Checksum error]");
+                } else if (role == Qt::BackgroundColorRole) {
+                    if (!checksumOk)
+                        return Packet::Invalid::INVALID_PACKET_BACKGROUND;
+                    else
+                        return QVariant();
+                }
             } else {
-                return tr("Invalid");
+                if (role == Qt::DisplayRole)
+                    return tr("Invalid");
+                else if (role == Qt::BackgroundColorRole)
+                    return Packet::Invalid::INVALID_PACKET_BACKGROUND;
             }
 
         default:
-            return tr("Unknown");
+            if (role == Qt::DisplayRole)
+                return tr("Unknown");
+            else if (role == Qt::BackgroundColorRole)
+                return Packet::Invalid::INVALID_PACKET_BACKGROUND;
     }
+
+    return QVariant();
 }
 
 int SIPPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)

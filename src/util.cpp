@@ -26,11 +26,9 @@
 #include <QTreeWidgetItem>
 #include <cmath>
 
-static QBrush BACKGROUND_INVALID(QColor(255, 80, 80));
-
 void Util::setItemInvalid(QTreeWidgetItem *item)
 {
-    item->setData(0, Qt::BackgroundRole, BACKGROUND_INVALID);
+    item->setData(0, Qt::BackgroundRole, Packet::Invalid::INVALID_PARAMETER_BACKGROUND);
 }
 
 void Util::setPacketByteHighlight(QTreeWidgetItem *item, int start, int length)

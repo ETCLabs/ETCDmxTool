@@ -802,8 +802,10 @@ void dissectMessageBlock(const Packet &p, QTreeWidgetItem *parent)
     Util::dissectGenericData(p, pidItem, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA, pdl, genericDataType);
 }
 
-void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
+dissectRdm_t dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 {
+    dissectRdm_t frameStatus = FRAME_VALID;
+
 	// Within min/max RDM message size
 	if(p.size() < RDM_PACKET_MIN_BYTES)
 	{
@@ -812,7 +814,7 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 		i->setText(1, QString::number(p.size()));
         Util::setPacketByteHighlight(i, 0, p.size());
 		parent->addChild(i);
-		return;
+        return FRAME_INVALID;
 	}
 
 	if(p.size() > RDM_PACKET_MAX_BYTES)
@@ -822,7 +824,7 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 		i->setText(1, QString::number(p.size()));
         Util::setPacketByteHighlight(i, 0, RDM_PACKET_MAX_BYTES);
 		parent->addChild(i);
-		return;
+        return FRAME_INVALID;
 	}
 
 	// Sub Start Code
@@ -831,7 +833,11 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 	i->setText(0, "Sub-Start Code");
 	i->setText(1, QString::number(subStartCode));
     Util::setPacketByteHighlight(i, RDM_SUB_START_CODE, 1);
-	parent->addChild(i);
+    if (subStartCode != E120_SC_SUB_MESSAGE) { // Valid value of SC_SUB_MESSAGE only
+        Util::setItemInvalid(i);
+        frameStatus = FRAME_INVALID;
+    }
+    parent->addChild(i);
    
 	// Length and calculated checksum
 	quint8 length;
@@ -848,6 +854,7 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 	else
 	{
         Util::setItemInvalid(i);
+        frameStatus = FRAME_INVALID;
 		i->setText(1, QString("Short: (%1) expected (%2)").arg(p.size()-2).arg(length));
 	}
 
@@ -885,7 +892,7 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 	{
 	case E120_DISCOVERY_COMMAND:
 	case E120_GET_COMMAND:
-	case E120_SET_COMMAND:
+    case E120_SET_COMMAND:
 		{
 			//Port Id
 			quint8 port = p[RDM_PORT_ID];
@@ -893,6 +900,10 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 			i->setText(0, "Port");
 			i->setText(1, QString::number(port));
             Util::setPacketByteHighlight(i, RDM_PORT_ID, 1);
+            if (port < 0x01 || port > 0xFF) { // Valid range of 0x01 - 0xFF
+                Util::setItemInvalid(i);
+                frameStatus = FRAME_INVALID;
+            }
 			parent->addChild(i);
 		} break;
 		
@@ -906,6 +917,17 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 			i->setText(0, "Response Type");
             i->setText(1, RDM_PIDString::responseTypeToString(ackNack));
             Util::setPacketByteHighlight(i, RDM_RESPONSE_TYPE, 1);
+            switch(ackNack) // Range check
+            {
+            case E120_RESPONSE_TYPE_ACK:
+            case E120_RESPONSE_TYPE_ACK_TIMER:
+            case E120_RESPONSE_TYPE_NACK_REASON:
+            case E120_RESPONSE_TYPE_ACK_OVERFLOW:
+                break; // Valid
+            default:
+                Util::setItemInvalid(i);
+                frameStatus = FRAME_INVALID;
+            }
 			parent->addChild(i);
 		} break;
 	}
@@ -924,6 +946,12 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 	i->setText(0, "Subdevice");
 	i->setText(1, QString::number(subdevice));
     Util::setPacketByteHighlight(i, RDM_SUBDEVICE, 2);
+    if (subdevice < 0x0000 || subdevice > 0x0200) { // Valid range of 0x0000 - 0x0200
+        if (!(cc == E120_SET_COMMAND && subdevice == E120_SUB_DEVICE_ALL_CALL)) { // SUB_DEVICE_ALL_CALL allowed for SET
+            Util::setItemInvalid(i);
+            frameStatus = FRAME_INVALID;
+        }
+    }
 	parent->addChild(i);
 
 	if(haveMessageBlock)
@@ -975,17 +1003,22 @@ void dissectRdm(const Packet &p, QTreeWidgetItem *parent)
 	else
 	{
         Util::setItemInvalid(i);
+        frameStatus = FRAME_INVALID;
 		i->setText(1, QString("Invalid (%1 != %2)")
 			.arg(checksum, 4, 16, QChar('0'))
 			.arg(actualChecksum, 4, 16, QChar('0')));
 	}
     Util::setPacketByteHighlight(i, length, 2);
 	parent->addChild(i);
+
+    return frameStatus;
 }
 
 
-void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
+dissectRdm_t dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
 {
+    dissectRdm_t frameStatus = FRAME_VALID;
+
 	int index=0;
 	while(p[index]==0xfe && index<p.length())
 		index++;
@@ -1001,7 +1034,7 @@ void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
         i->setText(0, "Invalid Response - too short");
         Util::setPacketByteHighlight(i, index, p.length());
 		parent->addChild(i);
-		return;
+        return FRAME_INVALID;
 	}
 
 	quint8 preambleSep = p[index];
@@ -1019,7 +1052,7 @@ void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
 	parent->addChild(i);
 	index++;
 	if(preambleSep!=0xAA)
-		return;
+        return FRAME_INVALID;
 
 	// EUID
 	i = new QTreeWidgetItem();
@@ -1072,8 +1105,11 @@ void dissectRdmDiscResponse(const Packet &p, QTreeWidgetItem *parent)
     {
         text.append(QString("Incorrect - should be %1").arg(localChecksum, 4, 16, QChar('0')));
         Util::setItemInvalid(i);
+        frameStatus = FRAME_INVALID;
     }
 	i->setText(1, text);
+
+    return frameStatus;
 }
 
 void dissectProductDetailIdListReply(const Packet &p, QTreeWidgetItem *parent, int offset, int pdl)

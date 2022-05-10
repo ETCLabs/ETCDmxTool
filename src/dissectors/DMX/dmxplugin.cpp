@@ -54,8 +54,11 @@ QVariant DmxPlugin::getDestination(const Packet &p)
     return QString("Broadcast");
 }
 
-QVariant DmxPlugin::getInfo(const Packet &p)
+QVariant DmxPlugin::getInfo(const Packet &p, int role)
 {
+    if (role != Qt::DisplayRole)
+        return QVariant();
+
     return QString("Slots %1").arg(p.size() - 1);
 }
 
@@ -67,7 +70,7 @@ int DmxPlugin::preprocessPacket(const Packet &p, QList<Packet> &list)
 
 void DmxPlugin::dissectPacket(const Packet &p, QTreeWidgetItem *parent)
 {
-    QTreeWidgetItem *i = new QTreeWidgetItem();
+    QTreeWidgetItem *i = nullptr;
 
     parent->setText(0, getProtocolName().toString());
     Util::setPacketByteHighlight(parent, 0, p.size());

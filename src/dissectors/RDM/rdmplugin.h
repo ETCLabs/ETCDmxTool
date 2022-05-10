@@ -37,12 +37,13 @@ public:
     QList<quint8> getStartCodes() override;
     QVariant getSource(const Packet &p) override;
     QVariant getDestination(const Packet &p) override;
-    QVariant getInfo(const Packet &p) override;
+    QVariant getInfo(const Packet &p, int role = Qt::DisplayRole) override;
     int preprocessPacket(const Packet &p, QList<Packet> &list) override;
     void dissectPacket(const Packet &p, QTreeWidgetItem *parent) override;
 
 private:
     bool quickValidateDiscoveryResponse(const Packet &p, quint64 &decoded_id);
+    static const QColor DISCOVERY_COLLISION_BACKGROUND;
 };
 
 #endif // DMX_H
