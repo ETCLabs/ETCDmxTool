@@ -40,6 +40,9 @@ class ICaptureDevice;
 class RDMController;
 struct RdmDeviceInfo;
 class LevelIndicator;
+class Scripting;
+
+constexpr int SCRIPT_SAVE_TIMEOUT = 5000;
 
 class MainWindow : public QMainWindow
 {
@@ -55,6 +58,7 @@ public:
 public slots:
     void readData();
     void on_actionSave_File_triggered();
+    void on_actionSave_As_triggered();
     void on_actionOpen_File_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
@@ -77,6 +81,11 @@ public slots:
     void on_btnToggleDmx_toggled(bool checked);
     void on_actionCaptureInfo_triggered();
     void on_actionDiscardDMX_triggered();
+    void on_btnRunScript_pressed();
+    void on_btnAbortScript_pressed();
+    void on_teScriptEdit_textChanged();
+    void jsConsoleMessage(const QMessageLogContext &context, const QString &msg);
+    void on_btnSerialSetup_pressed();
 private slots:
     void updateFilterPattern(const QString &pattern, int PatternSyntax = QRegExp::Wildcard);
     void setFilterColumn(unsigned int column);
@@ -96,14 +105,18 @@ private slots:
     void composeRawCommand();
     void rawCommandComplete(quint8 response, const QByteArray &data);
 
+    // Scripting
+    void scriptFinished(bool error, bool interrupted);
 private:
     Q_SIGNAL void updateStatusBarMsg();
     Q_SLOT void doUpdatetStatusBarMsg();
     bool isValidMimeData(const QMimeData* mimeData);
-    bool openFile(QString fileName);
+    bool openFile(const QString &fileName);
+    bool openScriptFile(const QString &fileName);
 
 protected:
     virtual void resizeEvent(QResizeEvent *e);
+    virtual void closeEvent(QCloseEvent *e);
 private:
     enum RdmInfoRows
     {
@@ -143,7 +156,8 @@ private:
         OPMODE_SNIFFER = 0,
         OPMODE_DMXCONTROL,
         OPMODE_RDMCONTROL,
-        OPMODE_DMXVIEW
+        OPMODE_DMXVIEW,
+        OPMODE_SCRIPT
     };
 
     Ui::MainWindowClass ui;
@@ -162,6 +176,11 @@ private:
 	void highlightPacketBytes(int start, int end);
 
     RdmDeviceInfo *selectedDevice();
+
+    bool loadScriptFile(const QString &filename);
+    void saveScriptFile();
+
+    void saveTextFile();
 
     dissectors m_dissectorList;
     PacketTable m_packetTable;
@@ -198,6 +217,11 @@ private:
     QComboBox *m_paramCombo;
     QSpinBox *m_subDeviceSpin;
     OperationMode m_mode = OPMODE_SNIFFER;
+    QString m_scriptFileName;
+    bool m_scriptFileModified = false;
+    QString m_captureFileName;
+    bool m_captureFileModified = false;
+    Scripting *m_scripting = Q_NULLPTR;
 };
 
 #endif // MAINWINDOW_H
