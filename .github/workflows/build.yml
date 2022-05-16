@@ -1,0 +1,47 @@
+# Github Actions configuration file
+# Build ETCDMXTool for Windows
+name: Build
+
+on:
+  push:
+  pull_request:
+  page_build:
+  release:
+    types:
+      - created
+      - edited
+      - prereleased
+      - released
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2.14.0
+      with:
+        version: '5.15.2'
+        arch: win32_msvc2019
+    - name: MSVC Environment Setup
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64_x86
+    - name: Create Makefile
+      run: qmake EtcDmxTool.pro
+    - name: Run MakeFile
+      run: nmake
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows
+        path: |
+          install/ETCDmxTool*.exe
+          release/*.pdb 
+    - name: Setup TMate Session (Failure Only)
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
