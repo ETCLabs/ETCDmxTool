@@ -54,15 +54,15 @@ void LogModel::doLog(const QString &message, quint32 severity)
 {
     if(this->thread()==QThread::currentThread())
     {
-        emit beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
+        beginInsertRows(QModelIndex(), m_logStrings.length(), m_logStrings.length());
         QString data = QDateTime::currentDateTime().toString(Qt::ISODate) + QString("\t") + message;
         if (severity == CDL_SEV_ERR) {
-            qStdErr() << data << endl;
+            qStdErr() << data << "\n";
         } else {
-            qStdOut() << data << endl;
+            qStdOut() << data << "\n";
         }
         m_logStrings << data;
-        emit endInsertRows();
+        endInsertRows();
     }
     else {
         QMetaObject::invokeMethod(this,

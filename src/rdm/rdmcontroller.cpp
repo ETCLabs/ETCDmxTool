@@ -83,7 +83,7 @@ void RDMController::advanceDiscoveryStateMachine()
             // Copy the discovered things to our list
             LogModel::log("Finished Discovery", CDL_SEV_INF, 1);
             LogModel::log(tr("Discovered %1 Devices").arg(Gadget2_GetDiscoveredDevices()), CDL_SEV_INF, 1);
-            for(int i=0; i<Gadget2_GetDiscoveredDevices(); i++)
+            for(unsigned int i=0; i<Gadget2_GetDiscoveredDevices(); i++)
             {
                 RdmDeviceInfo *info = Gadget2_GetDeviceInfo(i);
                 m_devices << info;

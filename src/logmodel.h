@@ -99,7 +99,7 @@ private:
     explicit LogModel(QObject *parent = nullptr);
     virtual ~LogModel() override;
     QStringList m_logStrings;
-    int m_severity;
+    unsigned int m_severity;
     int m_category;
     int m_verbosity = 5;
 };

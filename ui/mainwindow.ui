@@ -807,7 +807,7 @@ QProgressBar::chunk
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <widget class="QWidget" name="layoutWidget">
+          <widget class="QWidget" name="layoutWidget1">
            <layout class="QVBoxLayout" name="verticalLayout_13">
             <item>
              <widget class="QGroupBox" name="gbDiscControl">
@@ -906,7 +906,7 @@ QProgressBar::chunk
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
-           <widget class="QWidget" name="layoutWidget">
+           <widget class="QWidget" name="layoutWidget2">
             <layout class="QVBoxLayout" name="verticalLayout_7">
              <item>
               <widget class="QTabWidget" name="twRdmController">
@@ -1267,7 +1267,7 @@ QProgressBar::chunk
        </layout>
       </widget>
       <widget class="QWidget" name="gridWidgetPage">
-       <layout class="QVBoxLayout" name="verticalLayout_12">
+       <layout class="QVBoxLayout" name="verticalLayout_121">
         <item>
          <widget class="GridWidget" name="dmxGridWidget" native="true"/>
         </item>
@@ -1280,7 +1280,7 @@ QProgressBar::chunk
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QWidget" name="layoutWidget">
+          <widget class="QWidget" name="layoutWidget3">
            <layout class="QVBoxLayout" name="verticalLayout_16">
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
