@@ -31,6 +31,8 @@ In order to sniff DMX/RDM, you will need to wire your DMX device in to your syst
 
 ![How to sniff graphic](./doc/HowToSniff.png)
 
+# Scripting
+The application supports the ability to run in a scripted mode which may help with automation of testing or troubleshooting. For more info, take a look at the [Scripting](./doc/SCRIPTING.md) readme file.
 
 # Building
 If you are interested in building the application you will need the following:

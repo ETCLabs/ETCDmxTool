@@ -53,6 +53,7 @@
 #include "customdataroles.h"
 #include "levelindicator.h"
 #include "updatedialog.h"
+#include "serialdialog.h"
 
 // PcapNg Export
 #include "pcap/pcapng.h"
@@ -66,6 +67,9 @@
 
 // Logging
 #include "logmodel.h"
+
+// Scripting
+#include "scripting.h"
 
 #include "util.h"
 
@@ -125,6 +129,24 @@ QString prettifyHex(const QByteArray &data)
 }
 
 
+
+
+static MainWindow *mainWinPtr = Q_NULLPTR;
+
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    if(strncmp(context.category, "js", 2)==0)
+    {
+        mainWinPtr->jsConsoleMessage(context, msg);
+        return;
+    }
+
+    LogModel::getInstance()->log(msg, CDL_SEV_INF, 1);
+
+    if(type==QtFatalMsg)
+        abort();
+}
+
 MainWindow::MainWindow(ICaptureDevice *captureDevice)
     : QMainWindow(Q_NULLPTR, Qt::WindowFlags())
     , m_firstPacket(true)
@@ -132,6 +154,9 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     , m_captureDevice(captureDevice)
     , m_controller(Q_NULLPTR)
 {
+    mainWinPtr = this;
+    qInstallMessageHandler(myMessageOutput);
+
 	ui.setupUi(this);
 
     ui.toolBar->setParent(ui.centralWidget);
@@ -239,6 +264,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     connect(ui.tbSniffer,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
     connect(ui.tbTxMode,        SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
     connect(ui.tbDmxView,       SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
+    connect(ui.tbScript,        SIGNAL(clicked(bool)), this, SLOT(modeButtonPressed(bool)));
 
     // Packet table
     // Filtering model
@@ -397,6 +423,7 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     btnGroup->addButton(ui.tbSniffer);
     btnGroup->addButton(ui.tbTxMode);
     btnGroup->addButton(ui.tbDmxView);
+    btnGroup->addButton(ui.tbScript);
     btnGroup->setExclusive(true);
 
     // Setup Custom PID
@@ -509,6 +536,16 @@ MainWindow::MainWindow(ICaptureDevice *captureDevice)
     emit updateStatusBarMsg();
 
     setAcceptDrops(true);
+
+    // Scripting
+    m_scripting = new Scripting(m_captureDevice);
+    connect(m_scripting, SIGNAL(finished(bool, bool)), this, SLOT(scriptFinished(bool, bool)));
+    QSettings s;
+    // Open the last opened script file for convienience
+    if(s.contains("lastScriptFile"))
+    {
+        openScriptFile(s.value("lastScriptFile").toString());
+    }
 }
 
 MainWindow::~MainWindow()
@@ -583,16 +620,14 @@ void MainWindow::faderMoved(int value)
 {
     QSlider *slider = dynamic_cast<QSlider *>(sender());
 
-    int scene, index;
+    int index;
 
     if((index = m_scene1sliders.indexOf(slider)) > -1)
     {
-        scene = 1;
         m_scene1Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
     if((index = m_scene2sliders.indexOf(slider)) > -1)
     {
-        scene = 2;
         m_scene2Levels[index + ui.sbDmxStart->value() - 1] = static_cast<quint8>(value);
     }
 
@@ -627,6 +662,8 @@ void MainWindow::modeButtonPressed(bool checked)
         m_mode = OPMODE_RDMCONTROL;
     if(button == ui.tbDmxView)
         m_mode = OPMODE_DMXVIEW;
+    if(button == ui.tbScript)
+        m_mode = OPMODE_SCRIPT;
 
     ui.stackedWidget->setCurrentIndex(m_mode);
 
@@ -636,6 +673,7 @@ void MainWindow::modeButtonPressed(bool checked)
     {
     case OPMODE_SNIFFER: // Sniffer mode
         ui.actionSave_File->setEnabled(true);
+        ui.actionSave_As->setEnabled(true);
         ui.actionOpen_File->setEnabled(true);
         ui.actionExport_to_PcapNg->setEnabled(true);
         ui.menuCapture->setEnabled(true);
@@ -643,10 +681,13 @@ void MainWindow::modeButtonPressed(bool checked)
         {
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
         }
+        setWindowFilePath(m_captureFileName);
+        setWindowModified(m_captureFileModified);
         LogModel::log(tr("Switched to Sniffer Mode"), CDL_SEV_INF, 1);
         break;
     case OPMODE_DMXCONTROL: // DMX Sender Mode
         ui.actionSave_File->setEnabled(false);
+        ui.actionSave_As->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
@@ -656,23 +697,28 @@ void MainWindow::modeButtonPressed(bool checked)
             m_captureDevice->setMode(ICaptureDevice::TransmitMode);
             m_captureDevice->open();
         }
-
+        setWindowFilePath("");
+        setWindowModified(false);
         LogModel::log(tr("Switched to DMX Transmit Mode"), CDL_SEV_INF, 1);
         break;
     case OPMODE_RDMCONTROL: // RDM Controller Mode
         ui.menuCapture->setEnabled(false);
         ui.actionSave_File->setEnabled(false);
+        ui.actionSave_As->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
         ui.twRdmController->setCurrentIndex(0);
         // Auto start discovery
         if (m_controller) m_controller->startDiscovery();
+        setWindowFilePath("");
+        setWindowModified(false);
         LogModel::log(tr("Switched to RDM Controller Mode"), CDL_SEV_INF, 1);
         break;
     case OPMODE_DMXVIEW: // DMX View Mode
         ui.menuCapture->setEnabled(false);
         ui.actionSave_File->setEnabled(false);
+        ui.actionSave_As->setEnabled(false);
         ui.actionOpen_File->setEnabled(false);
         ui.actionExport_to_PcapNg->setEnabled(false);
         ui.menuCapture->setEnabled(false);
@@ -681,6 +727,18 @@ void MainWindow::modeButtonPressed(bool checked)
             m_captureDevice->setMode(ICaptureDevice::SniffMode);
             m_captureDevice->open();
         }
+        setWindowFilePath("");
+        setWindowModified(false);
+        break;
+    case OPMODE_SCRIPT: // Script mode
+        ui.menuCapture->setEnabled(false);
+        ui.actionSave_File->setEnabled(true);
+        ui.actionSave_As->setEnabled(true);
+        ui.actionOpen_File->setEnabled(true);
+        ui.actionExport_to_PcapNg->setEnabled(false);
+        ui.menuCapture->setEnabled(false);
+        setWindowFilePath(m_scriptFileName);
+        setWindowModified(m_scriptFileModified);
         break;
     }
 }
@@ -780,13 +838,54 @@ void MainWindow::updateTreeWidget(int currentRow)
 
 void MainWindow::on_actionSave_File_triggered()
 {
-    QSettings settings;
-    QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
-    QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", defaultPath, "Text Files (*.txt)");
-	if(filename.isEmpty()) return;
-    settings.setValue("textPath", filename);
+    if(m_mode==OPMODE_SNIFFER)
+    {
+        if(m_captureFileName.isEmpty())
+        {
+            on_actionSave_As_triggered();
+            return;
+        }
+        saveTextFile();
+    }
 
-    FileSave *f = new FileSave(m_packetTable, filename);
+    if(m_mode==OPMODE_SCRIPT)
+    {
+        if(m_scriptFileName.isEmpty())
+        {
+            on_actionSave_As_triggered();
+            return;
+        }
+        saveScriptFile();
+    }
+}
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    if(m_mode==OPMODE_SNIFFER)
+    {
+        QSettings settings;
+        QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+        QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", defaultPath, "Text Files (*.txt)");
+        if(filename.isEmpty()) return;
+        settings.setValue("textPath", filename);
+        m_captureFileName = filename;
+        saveTextFile();
+    }
+    if(m_mode==OPMODE_SCRIPT)
+    {
+        QSettings settings;
+        QString defaultPath = settings.value("scriptPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+        QString filename = QFileDialog::getSaveFileName(this, "Enter Filename", defaultPath, "Script Files (*.js)");
+        if(filename.isEmpty()) return;
+        settings.setValue("scriptPath", filename);
+        m_scriptFileName = filename;
+        saveScriptFile();
+    }
+}
+
+void MainWindow::saveTextFile()
+{
+    FileSave *f = new FileSave(m_packetTable, m_captureFileName);
     QThread *fileSaveThread = new QThread(this);
     f->moveToThread(fileSaveThread);
     fileSaveThread->start();
@@ -800,21 +899,35 @@ void MainWindow::on_actionSave_File_triggered()
     connect(f, &FileSave::Finished, this, [=]() {
         QApplication::restoreOverrideCursor();
         f->deleteLater();
+        setWindowModified(false);
+        m_captureFileModified = false;
     }, Qt::QueuedConnection);
 
     QMetaObject::invokeMethod(f, "doSave", Qt::QueuedConnection);
+
 }
 
 void MainWindow::on_actionOpen_File_triggered()
 {
-    QSettings settings;
-    QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
-    QString filename = QFileDialog::getOpenFileName(this, "Open File", defaultPath, "Text Files (*.txt)");
-    if(openFile(filename))
-        settings.setValue("textPath", filename);
+    if(m_mode==OPMODE_SNIFFER)
+    {
+        QSettings settings;
+        QString defaultPath = settings.value("textPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+        QString filename = QFileDialog::getOpenFileName(this, "Open File", defaultPath, "Text Files (*.txt)");
+        if(openFile(filename))
+            settings.setValue("textPath", filename);
+    }
+    if(m_mode==OPMODE_SCRIPT)
+    {
+        QSettings settings;
+        QString defaultPath = settings.value("scriptPath", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).toString();
+        QString filename = QFileDialog::getOpenFileName(this, "Open File", defaultPath, "Script Files (*.js)");
+        if(openScriptFile(filename))
+            settings.setValue("scriptPath", filename);
+    }
 }
 
-bool MainWindow::openFile(QString filename)
+bool MainWindow::openFile(const QString &filename)
 {
     if (filename.isEmpty()) return false;
     if (!QFileInfo::exists(filename)) return false;
@@ -840,7 +953,10 @@ bool MainWindow::openFile(QString filename)
         QApplication::restoreOverrideCursor();
         if (ui.tableView->model()->rowCount())
             ui.tableView->setCurrentIndex(ui.tableView->model()->index(0, 0));
-        setWindowTitle(filename);
+        setWindowFilePath(filename);
+        m_captureFileName = filename;
+        m_captureFileModified = false;
+        if(m_mode==OPMODE_SNIFFER) setWindowModified(false);
         f->deleteLater();
     }, Qt::QueuedConnection);
 
@@ -1704,4 +1820,149 @@ void MainWindow::on_actionDiscardDMX_triggered()
     {
         m_packetTable.discardDmxData();
     }
+}
+
+bool MainWindow::loadScriptFile(const QString &filename)
+{
+    QFile file(filename);
+    if(!file.open(QIODevice::ReadOnly))
+    {
+        QMessageBox::warning(this, tr("Could not open script"), tr("Unable to open file %1").arg(filename));
+        return false;
+    }
+
+    ui.teScriptEdit->clear();
+    ui.teScriptEdit->setPlainText(QString::fromUtf8(file.readAll()));
+    file.close();
+    return true;
+}
+
+void MainWindow::saveScriptFile()
+{
+    QFile file(m_scriptFileName);
+    if(!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::warning(this, tr("Could not open script"), tr("Unable to write to file %1").arg(m_scriptFileName));
+        return;
+    }
+
+    file.write(ui.teScriptEdit->toPlainText().toUtf8());
+    file.close();
+    m_scriptFileModified = false;
+    setWindowModified(false);
+}
+
+void MainWindow::on_btnRunScript_pressed()
+{
+    if(m_captureDevice) {
+        m_captureDevice->setMode(ICaptureDevice::TransmitMode);
+        m_captureDevice->open();
+    }
+    m_scripting->run(ui.teScriptEdit->toPlainText());
+    ui.btnRunScript->setEnabled(false);
+    ui.btnAbortScript->setEnabled(true);
+    jsConsoleMessage(QMessageLogContext(), tr("Script Started"));
+    ui.teScriptEdit->clearErrors();
+}
+
+void MainWindow::on_btnAbortScript_pressed()
+{
+    m_scripting->abort();
+    jsConsoleMessage(QMessageLogContext(), tr("Script Aborted"));
+    ui.btnRunScript->setEnabled(true);
+    ui.btnAbortScript->setEnabled(false);
+}
+
+void MainWindow::scriptFinished(bool error, bool interrupted)
+{
+    ui.btnRunScript->setEnabled(true);
+    ui.btnAbortScript->setEnabled(false);
+    if(error && !interrupted)
+    {
+        ui.teScriptEdit->setErrorOnLine(m_scripting->lastErrorLine()-1, m_scripting->lastErrorDescription());
+
+        jsConsoleMessage(QMessageLogContext(), tr("Script Error - %1 at line %2")
+                         .arg(m_scripting->lastErrorDescription())
+                         .arg(m_scripting->lastErrorLine()));
+    }
+}
+
+void MainWindow::on_teScriptEdit_textChanged()
+{
+    this->setWindowModified(true);
+    m_scriptFileModified = true;
+}
+
+void MainWindow::jsConsoleMessage(const QMessageLogContext &context, const QString &msg)
+{
+    Q_UNUSED(context)
+    QString stamped = QDateTime::currentDateTime().toString("HH:mm:ss") + QString(" ") + msg;
+    if(QThread::currentThread()==this->thread())
+    {
+        ui.teScriptConsole->appendPlainText(stamped);
+    }
+    else {
+        QMetaObject::invokeMethod(ui.teScriptConsole, "appendPlainText", Qt::QueuedConnection, Q_ARG(QString, stamped));
+    }
+}
+
+void MainWindow::on_btnSerialSetup_pressed()
+{
+    SerialDialog dialog;
+    if(dialog.exec() != QDialog::Accepted) return;
+
+    m_scripting->setSerialPort(dialog.portName(), dialog.baud(), dialog.dataBits(), dialog.parity(), dialog.stopBits(), dialog.flowControl());
+
+    ui.btnSerialSetup->setText(tr("Serial Port: %1 (%2 baud)")
+                               .arg(dialog.portName())
+                               .arg(dialog.baud()));
+}
+
+bool MainWindow::openScriptFile(const QString &fileName)
+{
+    if (fileName.isEmpty()) return false;
+    if (!QFileInfo::exists(fileName)) return false;
+
+    QFile scriptFile(fileName);
+    if(!scriptFile.open(QIODevice::ReadOnly))
+        return false;
+
+    QString script = QString::fromUtf8(scriptFile.readAll());
+    scriptFile.close();
+    ui.teScriptEdit->setPlainText(script);
+    m_scriptFileModified = false;
+    m_scriptFileName = fileName;
+    if(m_mode==OPMODE_SCRIPT)
+    {
+        setWindowFilePath(fileName);
+        setWindowModified(false);
+    }
+    return true;
+}
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    if(m_mode==OPMODE_SCRIPT && m_scriptFileModified)
+    {
+        int result = QMessageBox::question(this,
+                tr("Unsaved Changes"),
+                tr("You have modified your script file. Want to save changes?"),
+                QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+        switch(result)
+        {
+        case QMessageBox::Yes:
+            on_actionSave_File_triggered();
+            e->accept();
+            return;
+        case QMessageBox::No:
+            e->accept();
+            return;
+        default:
+            e->ignore();
+            return;
+        }
+    }
+
+    e->accept();
 }

@@ -22,7 +22,7 @@
 
 TEMPLATE = app
 TARGET = EtcDmxTool
-QT += core gui
+QT += core gui qml serialport
 
 # Extract version from Git tag/description
 GIT_COMMAND = git --git-dir $$shell_quote($$PWD/.git) --work-tree $$shell_quote($$PWD)
@@ -44,6 +44,7 @@ INCLUDEPATH += src/ \
 
 HEADERS += src/e110_startcodes.h \
     src/e110_mfctrIDs.h \
+    src/codeeditor.h \
     src/rdm/estardm.h \
     src/rdm/rdmcontroller.h \
     src/rdm/rdmEtcConsts.h \
@@ -56,6 +57,8 @@ HEADERS += src/e110_startcodes.h \
     src/fancysliderstyle.h \
     src/pcap/pcapng.h \
     src/pcap/pcapngLinkTypes.h \
+    src/scripting.h \
+    src/serialdialog.h \
     src/util.h \
     src/hexlineedit.h \
     src/selectdevicedialog.h \
@@ -70,6 +73,7 @@ HEADERS += src/e110_startcodes.h \
     src/file.h
 
 SOURCES += src/main.cpp \
+    src/codeeditor.cpp \
     src/rdm/rdmcontroller.cpp \
     src/rdm/rdmpidstrings.cpp \
     src/mainwindow.cpp \
@@ -78,6 +82,8 @@ SOURCES += src/main.cpp \
     src/capturedevice.cpp \
     src/fancysliderstyle.cpp \
     src/pcap/pcapng.cpp \
+    src/scripting.cpp \
+    src/serialdialog.cpp \
     src/util.cpp \
     src/selectdevicedialog.cpp \
     src/hexlineedit.cpp \
@@ -91,7 +97,8 @@ SOURCES += src/main.cpp \
     src/file.cpp
 
 FORMS += ui/mainwindow.ui \
-    ui/selectdevicedialog.ui
+    ui/selectdevicedialog.ui  \
+    ui/serialdialog.ui
 
 RESOURCES += res/resources.qrc
 
