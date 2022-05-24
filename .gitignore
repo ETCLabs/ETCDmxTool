@@ -24,7 +24,7 @@ install/deploy/
 
 # Visual Studio Temp #
 ######################
-*.exe
+install/*.exe
 # build result
 
 *.user

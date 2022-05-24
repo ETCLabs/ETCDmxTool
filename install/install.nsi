@@ -87,9 +87,53 @@ Section "Main Application" sec01
 ;close the opened previously uninstall log macros block.
 	!insertmacro UNINSTALL.LOG_CLOSE_INSTALL
 
+	; Drivers for the Gadget2
+    CreateDirectory "$INSTDIR\Gadget_Drivers"
+    SetOutPath "$INSTDIR\Gadget_Drivers"
+	File ".\gadget_drv\ETC_WinUSB.exe"
+	
+	; Drivers for the USB FTDI Whip
+    CreateDirectory "$INSTDIR\Whip_Drivers"
+    SetOutPath "$INSTDIR\Whip_Drivers"
+    File ".\whip_drv\ftdibus.cat"
+    File ".\whip_drv\etc_whip.inf"
+    CreateDirectory "$INSTDIR\Whip_Drivers\i386"
+    SetOutPath "$INSTDIR\Whip_Drivers\i386"
+	File ".\whip_drv\i386\ftbusui.dll"
+	File ".\whip_drv\i386\ftcserco.dll"
+	File ".\whip_drv\i386\ftd2xx.dll"
+	File ".\whip_drv\i386\ftd2xx.lib"
+	File ".\whip_drv\i386\ftdibus.sys"
+	File ".\whip_drv\i386\ftlang.dll"
+	File ".\whip_drv\i386\ftser2k.sys"
+	File ".\whip_drv\i386\ftserui2.dll"
+    CreateDirectory "$INSTDIR\Whip_Drivers\amd64"
+    SetOutPath "$INSTDIR\Whip_Drivers\amd64"
+	File ".\whip_drv\amd64\ftbusui.dll"
+	File ".\whip_drv\amd64\ftcserco.dll"
+	File ".\whip_drv\amd64\ftd2xx64.dll"
+	File ".\whip_drv\amd64\ftd2xx.lib"
+	File ".\whip_drv\amd64\ftdibus.sys"
+	File ".\whip_drv\amd64\ftlang.dll"
+	File ".\whip_drv\amd64\ftser2k.sys"
+	File ".\whip_drv\amd64\ftserui2.dll"
+	
+
 	;Visual Studio runtime requirements
 	DetailPrint "Installing MSVC Redistributables"
 	ExecWait '"$INSTDIR\${MSVC_EXE}" ${MSVC_OPT}'
+
+	;Gadget2 Drivers
+	DetailPrint "Installing Gadget2 Driver"
+	ExecWait '"$INSTDIR\Gadget_Drivers\ETC_WinUSB"'
+
+	;Whip Drivers
+	DetailPrint "Checking Windows Version"
+	${If} ${AtLeastWinVista}
+		DetailPrint "Windows Vista or above detected"
+		DetailPrint '$SYSDIR\pnputil /a "$INSTDIR\Whip_Drivers\etc_whip.inf"'
+		nsExec::ExecToLog '$SYSDIR\pnputil /a "$INSTDIR\Whip_Drivers\etc_whip.inf"'
+	${EndIf}
 	
 	;Shortcuts
 	CreateDirectory '$SMPROGRAMS\${PRODUCT_NAME}'
@@ -132,6 +176,32 @@ Section UnInstall
          ;end uninstall, after uninstall from all logged paths has been performed
          !insertmacro UNINSTALL.LOG_END_UNINSTALL
 
+		 
+		Delete "$INSTDIR\Gadget_Drivers\ETC_WinUSB.exe"
+		RmDir "$INSTDIR\Gadget_Drivers"
+
+		Delete "$INSTDIR\Whip_Drivers\ftdibus.cat"
+		Delete "$INSTDIR\Whip_Drivers\etc_whip.inf"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftbusui.dll"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftcserco.dll"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftd2xx.dll"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftd2xx.lib"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftdibus.sys"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftlang.dll"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftser2k.sys"
+		Delete "$INSTDIR\Whip_Drivers\i386\ftserui2.dll"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftbusui.dll"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftcserco.dll"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftd2xx64.dll"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftd2xx.lib"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftdibus.sys"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftlang.dll"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftser2k.sys"
+		Delete "$INSTDIR\Whip_Drivers\amd64\ftserui2.dll"
+		RmDir "$INSTDIR\Whip_Drivers\i386"
+		RmDir "$INSTDIR\Whip_Drivers\amd64"
+		RmDir "$INSTDIR\Whip_Drivers"
+
         Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
         Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
         RmDir "$SMPROGRAMS\${PRODUCT_NAME}"
@@ -142,8 +212,6 @@ SectionEnd
 
 
 Function UN.onInit
-
          ;begin uninstall, could be added on top of uninstall section instead
          !insertmacro UNINSTALL.LOG_BEGIN_UNINSTALL
-
 FunctionEnd
