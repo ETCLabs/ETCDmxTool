@@ -1,13 +1,18 @@
 # Gadget II
-INCLUDEPATH += gadget
-HEADERS += gadget/GadgetDLL.h
+INCLUDEPATH *= $$clean_path($$PWD/gadget/include)
+HEADERS += $$PWD/gadget/include/gadget/GadgetDLL.h
+
 win32 {
-    GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/GadgetDll.dll))
+contains(QT_ARCH, i386) {
+        GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/Win32/GadgetDll.dll))
+        LIBS += -L$$PWD/gadget/Win32 -lGadgetDll
+    } else {
+        GADGET_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/gadget/x64/GadgetDll.dll))
+        LIBS += -L$$PWD/gadget/x64 -lGadgetDll
+    }
     GADGET_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/GadgetDll.dll))
-    LIBS += -L$$PWD/gadget -lGadgetDll
-}
-unix {
-    SOURCES += gadget/GadgetDLL.cpp
+} else {
+    SOURCES += gadget/stub/GadgetDLL.cpp
 }
 
 win32 {

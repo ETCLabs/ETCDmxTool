@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "rdmpidstrings.h"
 #include "estardm.h"
+#include "rdmpidstrings.h"
 #include "rdmEtcConsts.h"
 
 QString RDM_PIDString::productCategoryToString(quint16 value)

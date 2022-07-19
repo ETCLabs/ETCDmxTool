@@ -4,9 +4,10 @@
  * so pre-determined values are returned by accompanying source file
  * to ensure code compatibility until such a time when full support is added
  */
-#include "GadgetDLL.h"
 
-#if defined(Q_OS_LINUX)
+#include "gadget/GadgetDLL.h"
+
+#if !defined(Q_OS_WIN)
 
 static char GadgetVersion[] = "0.0.0";
 static char GadgetType[] = "Fake Device";

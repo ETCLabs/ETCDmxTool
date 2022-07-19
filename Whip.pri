@@ -15,8 +15,8 @@ contains(QT_ARCH, i386) {
 } else {
     win32 {
         INCLUDEPATH += whip/windows
-        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx.dll))
-        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx.dll))
+        FTD2xx_DLL_SRC = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/whip/windows/amd64/ftd2xx64.dll))
+        FTD2xx_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/ftd2xx64.dll))
         LIBS += -L$$PWD/whip/windows/amd64 -lftd2xx
     }
     unix {
