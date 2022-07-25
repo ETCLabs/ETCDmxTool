@@ -14,8 +14,21 @@ on:
       - released
 
 jobs:
-  build_windows:
-    runs-on: windows-latest
+  job:
+    name: build-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.qtver }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+        qtver: ['5.15.2']
+        arch: [x86, x64]
+        include:
+          - os: windows-latest
+            arch: x86
+            qtarch: win32_msvc2019
+          - os: windows-latest
+            arch: x64
+            qtarch: win64_msvc2019_64
 
     steps:
     - name: Checkout
@@ -25,17 +38,18 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2.14.0
       with:
-        version: '5.15.2'
-        arch: win32_msvc2019
+        version: ${{ matrix.qtver }}
+        arch: ${{ matrix.qtarch }}
     - name: MSVC Environment Setup
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        arch: amd64_x86
+        arch: ${{ matrix.arch }}
     - name: Create Makefile
       run: qmake EtcDmxTool.pro
     - name: Run MakeFile
       run: nmake
     - name: Upload Artifact
+      if: contains(matrix.arch, 'x86')
       uses: actions/upload-artifact@v2
       with:
         name: windows
