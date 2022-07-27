@@ -22,15 +22,15 @@ char * Gadget2_GetDllVersion()
 /***************** Startup and Shutdown *****************/
 
 /* Start up the Gadget2 interface. This should be called before any other functions are used */
-GADGET_DLL_API int Gadget2_Connect()
+GADGET_DLL_API bool Gadget2_Connect()
 {
     return 0;
 }
 
 /* Shutdown the Gadget2 interface. Stops the threads; do not use other functions after calling this */
-GADGET_DLL_API int Gadget2_Disconnect(void)
+GADGET_DLL_API void Gadget2_Disconnect(void)
 {
-    return 0;
+    return;
 };
 
 
@@ -75,10 +75,10 @@ GADGET_DLL_API unsigned int Gadget2_GetNumGadgetDevices()
 }
 
 /* Return the version number of the specified device as a string */
-GADGET_DLL_API unsigned char * Gadget2_GetGadgetVersion(unsigned int DeviceNum)
+GADGET_DLL_API const char * Gadget2_GetGadgetVersion(unsigned int DeviceNum)
 {
     Q_UNUSED(DeviceNum);
-    return reinterpret_cast<unsigned char *>(GadgetVersion);
+    return GadgetVersion;
 }
 
 /* Return the serial number of the specified device as a string */
