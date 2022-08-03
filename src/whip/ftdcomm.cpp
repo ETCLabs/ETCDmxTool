@@ -161,7 +161,7 @@ QList<FTDComm::FtdiDevice> FTDComm::GetUsbWhips()
 
 QString FTDComm::GetDeviceDescription(int DeviceNum)
 {
-    DWORD devIndex = DeviceNum;
+    quintptr devIndex = DeviceNum;
     char Buffer[64];
 
     FT_STATUS RetVal = FT_ListDevices((PVOID)devIndex, Buffer, FT_LIST_BY_INDEX|FT_OPEN_BY_DESCRIPTION);
@@ -174,7 +174,7 @@ QString FTDComm::GetDeviceDescription(int DeviceNum)
 
 QString FTDComm::GetDeviceSerialNumber(int DeviceNum)
 {
-    DWORD devIndex = DeviceNum;
+    quintptr devIndex = DeviceNum;
     char Buffer[64];
 
     FT_STATUS RetVal = FT_ListDevices((PVOID)devIndex, Buffer, FT_LIST_BY_INDEX|FT_OPEN_BY_SERIAL_NUMBER);

@@ -26,7 +26,7 @@
 
 
 #include <QAbstractListModel>
-#include "GadgetDLL.h"
+#include "gadget/GadgetDLL.h"
 #include <QMap>
 #include <QFile>
 

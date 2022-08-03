@@ -1,21 +1,27 @@
 TEMPLATE        = lib
 CONFIG         += plugin
 QT             += widgets
-INCLUDEPATH    += ../../
-HEADERS         = rdmplugin.h \
-    ../../packetbuffer.h \
-    ../../util.h \
-    rdmdissector.h \
-    ../../rdm/rdmpidstrings.h \
-    rdm_appendix_b.h \
-    rdm_dimmermsg.h
-SOURCES         = rdmplugin.cpp \
-    ../../packetbuffer.cpp \
-    ../../util.cpp \
-    rdmdissector.cpp \
-    ../../rdm/rdmpidstrings.cpp \
-    rdm_appendix_b.cpp \
-    rdm_dimmermsg.cpp
+
+INCLUDEPATH    *= $$clean_path($$PWD/../../)
+
+HEADERS += \
+    $$PWD/rdmplugin.h \
+    $$PWD/../../packetbuffer.h \
+    $$PWD/../../util.h \
+    $$PWD/rdmdissector.h \
+    $$PWD/../../rdm/rdmpidstrings.h \
+    $$PWD/rdm_appendix_b.h \
+    $$PWD/rdm_dimmermsg.h
+
+SOURCES += \
+    $$PWD/rdmplugin.cpp \
+    $$PWD/../../packetbuffer.cpp \
+    $$PWD/../../util.cpp \
+    $$PWD/rdmdissector.cpp \
+    $$PWD/../../rdm/rdmpidstrings.cpp \
+    $$PWD/rdm_appendix_b.cpp \
+    $$PWD/rdm_dimmermsg.cpp
+
 TARGET          = $$qtLibraryTarget(dissectorpluginRDM)
 
 CONFIG(debug, debug|release) {

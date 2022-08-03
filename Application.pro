@@ -39,8 +39,7 @@ include($$PWD/Whip.pri)
 include($$PWD/Gadget.pri)
 
 # Source
-INCLUDEPATH += src/ \
-    RDM/
+INCLUDEPATH *= $$PWD/src
 
 HEADERS += src/e110_startcodes.h \
     src/e110_mfctrIDs.h \

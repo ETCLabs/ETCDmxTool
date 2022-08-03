@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 
 #include "capturedevice.h"
-#include "GadgetDLL.h"
+#include "gadget/GadgetDLL.h"
 #include "ftd2xx.h"
 #include "whip/ftdcomm.h"
 #include "rdm/estardm.h"
@@ -362,9 +362,9 @@ CaptureDeviceList::CaptureDeviceList()
             // TODO IO cards with more ports..
             for(unsigned int port=1; port<=Gadget2_GetPortCount(i); port++)
             {
-                unsigned char * version = Gadget2_GetGadgetVersion(i);
-                unsigned int serial = Gadget2_GetGadgetSerialNumber(i);
-                const char *deviceType = Gadget2_GetGadgetType(i);
+                const QString version = QString::fromUtf8(Gadget2_GetGadgetVersion(i));
+                const unsigned int serial = Gadget2_GetGadgetSerialNumber(i);
+                const QString deviceType = QString::fromUtf8(Gadget2_GetGadgetType(i));
 
                 CaptureDeviceInfo info;
                 info.type = DEVTYPE_GADGET;
@@ -373,14 +373,14 @@ CaptureDeviceList::CaptureDeviceList()
                 info.description = QString("%1 S/N %2 (v%3) - Port %4")
                         .arg(deviceType)
                         .arg(serial)
-                        .arg(reinterpret_cast<char*>(version))
+                        .arg(version)
                         .arg(port);
                 info.deviceCapabilities = CAPABILITY_CONTROLLER | CAPABILITY_DMX_SENDER;
                 // Only Gadget2 v1.2 and above can sniff...
                 if (
-                        QString(deviceType)==QString("Gadget 2") &&
-                        !QString(reinterpret_cast<char*>(version)).startsWith("1.0.") &&
-                        !QString(reinterpret_cast<char*>(version)).startsWith("1.1.")
+                    deviceType == QLatin1String("Gadget 2") &&
+                    !version.startsWith(QLatin1String("1.0.")) &&
+                    !version.startsWith(QLatin1String("1.1."))
                     ) {
                     info.deviceCapabilities |= CAPABILITY_SNIFFER;
                 }
@@ -406,7 +406,7 @@ CaptureDeviceList::CaptureDeviceList()
         CaptureDeviceInfo info;
         info.type = DEVTYPE_WHIP;
         info.index = device.deviceNum;
-        info.description = QString("Whip S/N %1 - %2").arg(device.serialNum).arg(device.description);
+        info.description = QStringLiteral("Whip S/N %1 - %2").arg(device.serialNum).arg(device.description);
         info.deviceCapabilities = CAPABILITY_DMX_SENDER | CAPABILITY_SNIFFER;
 
         m_devList << info;
