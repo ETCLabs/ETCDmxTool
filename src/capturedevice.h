@@ -22,10 +22,11 @@
 #define CAPTUREDEVICE_H
 #include <QObject>
 #include <QMutex>
+#include <QTimer>
 #include "whip/ftdcomm.h"
 #include "packetbuffer.h"
 #include "etc_include/RdmDeviceInfo.h"
-#include "GadgetDLL.h"
+#include "gadget/GadgetDLL.h"
 
 
 class ICaptureDevice;
