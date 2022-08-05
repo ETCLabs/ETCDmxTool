@@ -140,9 +140,12 @@ CONFIG(release, debug|release) {
     isEmpty(MAKENSIS_BIN) {
         warning("Could not find makensis in PATH, will not create installer")
     } else {
+        contains(QT_ARCH, i386) {
             DEPLOY_INSTALLER = $$shell_quote($$system_path($$MAKENSIS_BIN)) /DPRODUCT_VERSION="$${GIT_TAG}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
+        }
+        # TODO: Installer for 64bit edition
     }
-    }
+ }
 
  # Execute deployment if extant
     isEmpty(DEPLOY_COMMAND) {
