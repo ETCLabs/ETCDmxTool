@@ -46,17 +46,22 @@ public:
 
     enum GenericParamDataTypeFlags
     {
-        GenericDataNumber   = 0x01,
-        GenericDataText     = 0x02,
-        GenericDataBitset   = 0x04,
-        GenericDataBool     = 0x08
+      GenericDataUnsigned     = 1 << 0,  // Unsigned integer
+      GenericDataUnsignedHex  = 1 << 1,  // Unsigned integer as hex
+      GenericDataSigned       = 1 << 2,  // Signed integer
+      GenericDataText         = 1 << 3,
+      GenericDataBitset       = 1 << 4,
+      GenericDataBool         = 1 << 5,
+
+      GenericDataUnsignedNumber = GenericDataUnsigned | GenericDataUnsignedHex,
+      GenericDataNumber = GenericDataUnsigned | GenericDataUnsignedHex | GenericDataSigned,
     };
 
     static void dissectGenericData(const Packet &p, QTreeWidgetItem *parent, int offset, int pdLength, quint8 dataTypeFlags = GenericDataNumber | GenericDataText | GenericDataBitset);
 
     static QString formatRdmUid(quint16 manufacturer, quint32 devId);
     static QString formatRdmUid(quint64 combinedId);
-    static QString paramIdToString(quint16 paramId);
+    static QString paramIdToString(quint16 paramId, bool *manufacturerSpecific = nullptr);
 
     static QString sensorUnitToString(quint8 unit);
     static QString sensorUnitToShortString(quint8 unit);

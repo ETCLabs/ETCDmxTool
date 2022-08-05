@@ -460,7 +460,8 @@ QString RDM_PIDString::dataTypeToString(quint8 dataType)
         default :
                 if ((dataType > 0x7F) && (dataType < 0xE0))
                 {
-                        return QString("Manufacturer-Specific");
+                  return QStringLiteral("Manufacturer-Specific: 0x%1 / %2")
+                      .arg(QString::number(dataType, 16).toUpper(), QString::number(dataType, 10));
                 }
         }
         return QString("INVALID");

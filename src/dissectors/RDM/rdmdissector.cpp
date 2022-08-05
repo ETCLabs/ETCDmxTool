@@ -312,12 +312,14 @@ void dissectMessageBlock(const Packet &p, QTreeWidgetItem *parent)
 	parent->addChild(i);
 	
    // Parameter Id
-	quint16 paramId = p[RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID] << 8 | p[RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID + 1] ;
+    quint16 paramId = Util::unpackU16(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID);
 	i = new QTreeWidgetItem();
 	i->setText(0, "Parameter Id");
-	i->setText(1, QString("%1 (%2)")
-        .arg(Util::paramIdToString(paramId))
-		.arg(paramId, 2, 16, QChar('0')));
+    bool manufacturerSpecific;
+    QString pidString = Util::paramIdToString(paramId, &manufacturerSpecific);
+    if (!manufacturerSpecific)
+        pidString.append(QStringLiteral(" (0x%2)").arg(paramId, 4, 16, QChar('0')));
+    i->setText(1, pidString);
     Util::setPacketByteHighlight(i, RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID, 2);
 	parent->addChild(i);
 
@@ -395,23 +397,29 @@ void dissectMessageBlock(const Packet &p, QTreeWidgetItem *parent)
         return;
     }
 
-        // RDM:2010 10.4 RDM Information Messages
+    // RDM:2010 10.4 RDM Information Messages
     case E120_SUPPORTED_PARAMETERS:
-        if (cc == E120_GET_COMMAND_RESPONSE)
+        switch (cc)
+        {
+        default: Util::setItemInvalid(pidItem); break;
+        case E120_GET_COMMAND: break;
+        case E120_GET_COMMAND_RESPONSE:
         {
             dissectSupportedParametersReply(p, pidItem, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA, pdl);
             return;
         }
+}
         break;
     case E120_PARAMETER_DESCRIPTION:
-        if (cc == E120_GET_COMMAND_RESPONSE)
+        switch (cc)
         {
-            dissectParameterDescriptionReply(p, pidItem, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA, pdl);
-            return;
+          default: Util::setItemInvalid(pidItem); break;
+          case E120_GET_COMMAND: genericDataType = Util::GenericDataUnsignedNumber; break;
+          case E120_GET_COMMAND_RESPONSE: dissectParameterDescriptionReply(p, pidItem, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA, pdl); return;
         }
         break;
 
-        // RDM:2010 10.5 Product Information Messages
+      // RDM:2010 10.5 Product Information Messages
 	case E120_DEVICE_INFO:
 		if(cc==E120_GET_COMMAND_RESPONSE)
 		{
