@@ -34,6 +34,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += QT_DLL
 
+win32 {
+    QMAKE_CXXFLAGS += /Zi
+    QMAKE_LFLAGS += /INCREMENTAL:NO /Debug
+}
+
 # Hardware includes
 include($$PWD/Whip.pri)
 include($$PWD/Gadget.pri)
@@ -114,27 +119,45 @@ TARGET_CUSTOM_EXT = .exe
 DEPLOY_DIR = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy))
 DEPLOY_TARGET = $$shell_quote($$system_path($${DESTDIR}/$${TARGET}$${TARGET_CUSTOM_EXT}))
 
-DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${DESTDIR}/dissectorplugin*.dll))
-DISSECTOR_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/dissectorplugin*.dll))
-
-PRE_DEPLOY_COMMAND =  $$sprintf($${QMAKE_MKDIR_CMD}, $$shell_path($${DEPLOY_DIR})) $$escape_expand(\\n\\t)
-PRE_DEPLOY_COMMAND += $$QMAKE_DEL_FILE $${DEPLOY_DIR}\*.* /S /Q $$escape_expand(\\n\\t)
-PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $${FTD2xx_DLL_DST} $$escape_expand(\\n\\t)
-PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${GADGET_DLL_SRC} $${GADGET_DLL_DST} $$escape_expand(\\n\\t)
-PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DISSECTOR_DLL_SRC} $${DISSECTOR_DLL_DST} $$escape_expand(\\n\\t)
-PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DEPLOY_TARGET} $${DEPLOY_DIR} $$escape_expand(\\n\\t)
-DEPLOY_COMMAND =  $$shell_quote($$system_path($$[QT_INSTALL_PREFIX]/bin/windeployqt))
-DEPLOY_OPT = --dir $${DEPLOY_DIR}
-DEPLOY_INSTALLER = makensis /DPRODUCT_VERSION="$${GIT_TAG}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
-
-win32 {
-    QMAKE_CXXFLAGS += /Zi
-    QMAKE_LFLAGS += /INCREMENTAL:NO /Debug
-}
-
+# Configure Release deployment
 CONFIG(release, debug|release) {
-    QMAKE_POST_LINK += $${PRE_DEPLOY_COMMAND} $$escape_expand(\\n\\t)
-    QMAKE_POST_LINK += $${DEPLOY_COMMAND} $${DEPLOY_TARGET} $${DEPLOY_OPT} $$escape_expand(\\n\\t)
-    QMAKE_POST_LINK += $${DEPLOY_CLEANUP} $$escape_expand(\\n\\t)
-    QMAKE_POST_LINK += $${DEPLOY_INSTALLER} $$escape_expand(\\n\\t)
+ # Windows deployment
+ win32 {
+    DISSECTOR_DLL_SRC = $$shell_quote($$system_path($${DESTDIR}/dissectorplugin*.dll))
+    DISSECTOR_DLL_DST = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy/dissectorplugin*.dll))
+
+    PRE_DEPLOY_COMMAND =  $$sprintf($${QMAKE_MKDIR_CMD}, $$shell_path($${DEPLOY_DIR})) $$escape_expand(\\n\\t)
+    PRE_DEPLOY_COMMAND += $$QMAKE_DEL_FILE $${DEPLOY_DIR}\*.* /S /Q $$escape_expand(\\n\\t)
+    PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${FTD2xx_DLL_SRC} $${FTD2xx_DLL_DST} $$escape_expand(\\n\\t)
+    PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${GADGET_DLL_SRC} $${GADGET_DLL_DST} $$escape_expand(\\n\\t)
+    PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DISSECTOR_DLL_SRC} $${DISSECTOR_DLL_DST} $$escape_expand(\\n\\t)
+    PRE_DEPLOY_COMMAND += $$QMAKE_COPY $${DEPLOY_TARGET} $${DEPLOY_DIR} $$escape_expand(\\n\\t)
+    DEPLOY_COMMAND =  $$shell_quote($$system_path($$[QT_INSTALL_BINS]/windeployqt))
+    DEPLOY_OPT = --dir $${DEPLOY_DIR}
+
+    # Find NSIS
+    MAKENSIS_BIN = $$system(where makensis.exe 2> nul)
+    isEmpty(MAKENSIS_BIN) {
+        warning("Could not find makensis in PATH, will not create installer")
+    } else {
+        contains(QT_ARCH, i386) {
+            DEPLOY_INSTALLER = $$shell_quote($$system_path($$MAKENSIS_BIN)) /DPRODUCT_VERSION="$${GIT_TAG}" $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/install.nsi))
+        }
+        # TODO: Installer for 64bit edition
+    }
+ }
+
+ # Execute deployment if extant
+    isEmpty(DEPLOY_COMMAND) {
+        message("Deployment not configured for target platform $${QMAKESPEC}")
+    } else {
+        QMAKE_POST_LINK += $${PRE_DEPLOY_COMMAND} $$escape_expand(\\n\\t)
+        QMAKE_POST_LINK += $${DEPLOY_COMMAND} $${DEPLOY_TARGET} $${DEPLOY_OPT} $$escape_expand(\\n\\t)
+        QMAKE_POST_LINK += $${DEPLOY_CLEANUP} $$escape_expand(\\n\\t)
+        isEmpty(DEPLOY_INSTALLER) {
+            message("Installer not configured for target platform $${QMAKESPEC}")
+        } else {
+            QMAKE_POST_LINK += $${DEPLOY_INSTALLER} $$escape_expand(\\n\\t)
+        }
+    }
 }
