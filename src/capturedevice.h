@@ -26,7 +26,7 @@
 #include "whip/ftdcomm.h"
 #include "packetbuffer.h"
 #include "etc_include/RdmDeviceInfo.h"
-#include "gadget/GadgetDLL.h"
+#include "GadgetDLL.h"
 
 
 class ICaptureDevice;

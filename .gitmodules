@@ -1,0 +1,3 @@
+[submodule "gadget/libGadget"]
+	path = gadget/libGadget
+	url = https://github.com/ETCLabs/libGadget.git

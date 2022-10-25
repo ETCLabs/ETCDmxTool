@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 
 #include "capturedevice.h"
-#include "gadget/GadgetDLL.h"
+#include "GadgetDLL.h"
 #include "ftd2xx.h"
 #include "whip/ftdcomm.h"
 #include "rdm/estardm.h"
@@ -352,7 +352,7 @@ CaptureDeviceList::CaptureDeviceList()
 {
     int result = Gadget2_Connect();
     // Wait for the threads to start up to discover gadgets
-    QThread::msleep(1000);
+    QThread::msleep(3000);
 
     if(result==1)
     {

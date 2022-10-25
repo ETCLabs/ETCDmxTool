@@ -63,7 +63,7 @@
 #include "rdm/estardm.h"
 #include "rdm/rdmpidstrings.h"
 #include "etc_include/RDM_CmdC.h"
-#include "gadget/GadgetDLL.h"
+#include "GadgetDLL.h"
 
 // Logging
 #include "logmodel.h"
