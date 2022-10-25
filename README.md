@@ -6,14 +6,15 @@ ETCDmxTool is a free, open-source tool with the ability to capture DMX/RDM data;
 # Supported DMX Devices
 To interface to a DMX/RDM system, ETCDmxTool supports three USB devices - the ETC Gadget I, the ETC Gadget II and the ETC USB Whip. The features available differ slightly depending on the selected device:
 
-| Feature              | USB Whip           | Gadget I<sup>1</sup> | Gadget II<sup>1</sup>           |
-|----------------------|--------------------|----------------------|---------------------------------|
-| DMX/RDM Data Capture | :heavy_check_mark: | :x:                  | :heavy_check_mark: <sup>2</sup> |
-| DMX Output           | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:              |
-| RDM Controller       | :x:                | :heavy_check_mark:   | :heavy_check_mark:              |
+| Feature              | USB Whip           | Gadget I<sup>1</sup> | Gadget II<sup>1</sup>           | Gadget II (CPU2)<sup>1</sup>    |
+|----------------------|--------------------|----------------------|---------------------------------|---------------------------------|
+| DMX/RDM Data Capture | :heavy_check_mark: | :x:                  | :heavy_check_mark: <sup>2</sup> | :white_check_mark: <sup>3</sup> |
+| DMX Output           | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:              | :heavy_check_mark:              |
+| RDM Controller       | :x:                | :heavy_check_mark:   | :heavy_check_mark:              | :white_check_mark: <sup>3</sup> |
 
 <sup>1</sup> Windows Only  
 <sup>2</sup> Firmware v1.2.0 or above
+<sup>3</sup> Coming in future firmware versions
 
 # Supported Platforms
 ## Windows
