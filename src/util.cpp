@@ -149,6 +149,24 @@ QString Util::displayBits(const Packet &p, int offset, int pdLength)
     return result;
 }
 
+template<typename UT, typename ST>
+void addGenericNumber(UT pd, ST pds, QTreeWidgetItem *parent, int offset, quint8 dataTypeFlags)
+{
+  QStringList results;
+  if (dataTypeFlags & Util::GenericDataUnsignedHex)
+    results.append(QStringLiteral("0x") + QString::number(pd, 16).toUpper());
+  if (dataTypeFlags & Util::GenericDataUnsigned)
+    results.append(QString::number(pd, 10));
+  if (dataTypeFlags & Util::GenericDataSigned)
+    results.append(QString::number(pds, 10));
+
+  QTreeWidgetItem *i = new QTreeWidgetItem();
+  i->setText(0, "Number");
+  i->setText(1, results.join(QStringLiteral(" / ")));
+  Util::setPacketByteHighlight(i, offset, sizeof(pd));
+  parent->addChild(i);
+}
+
 void Util::dissectGenericData(const Packet &p, QTreeWidgetItem *parent, int offset, int pdLength, quint8 dataTypeFlags)
 {
     if (pdLength == 0) return; // No data
@@ -161,31 +179,19 @@ void Util::dissectGenericData(const Packet &p, QTreeWidgetItem *parent, int offs
         {
             quint8 pd = p[offset];
             qint8 *pds = reinterpret_cast<qint8*>(&pd);
-            QTreeWidgetItem *i = new QTreeWidgetItem();
-            i->setText(0, "Number");
-            i->setText(1, QString("%1 / %2").arg(pd).arg(*pds));
-            Util::setPacketByteHighlight(i, offset, pdLength);
-            parent->addChild(i);
+            addGenericNumber(pd, *pds, parent, offset, dataTypeFlags);
         } break;
         case 2:
         {
             quint16 pd = unpackU16(p, offset);
             qint16 *pds = reinterpret_cast<qint16*>(&pd);
-            QTreeWidgetItem *i = new QTreeWidgetItem();
-            i->setText(0, "Number");
-            i->setText(1, QString("%1 / %2").arg(pd).arg(*pds));
-            Util::setPacketByteHighlight(i, offset, pdLength);
-            parent->addChild(i);
+            addGenericNumber(pd, *pds, parent, offset, dataTypeFlags);
         } break;
         case 4:
         {
             quint32 pd = unpackU32(p, offset);
             qint32 *pds = reinterpret_cast<qint32*>(&pd);
-            QTreeWidgetItem *i = new QTreeWidgetItem();
-            i->setText(0, "Number");
-            i->setText(1, QString("%1 / %2").arg(pd).arg(*pds));
-            Util::setPacketByteHighlight(i, offset, pdLength);
-            parent->addChild(i);
+            addGenericNumber(pd, *pds, parent, offset, dataTypeFlags);
         } break;
         default: ;
         }
@@ -256,8 +262,11 @@ QString Util::formatRdmUid(quint64 combinedId)
     return formatRdmUid(manufactuer, device);
 }
 
-QString Util::paramIdToString(quint16 paramId)
+QString Util::paramIdToString(quint16 paramId, bool *manufacturerSpecific)
 {
+    if (manufacturerSpecific)
+        *manufacturerSpecific = false;
+
     switch(paramId)
     {
     case E120_DISC_UNIQUE_BRANCH:
@@ -407,14 +416,17 @@ QString Util::paramIdToString(quint16 paramId)
     case E137_1_POWER_ON_SELF_TEST:
         return "E137_1_POWER_ON_SELF_TEST";
     }
+
+    const QString hexformat = QStringLiteral("%1").arg(paramId, 4, 16).toUpper();
+
     if(paramId >= 0x8000 && paramId<=0xFFDF)
     {
-        QString format("%1");
-        format = format.arg(paramId, 4, 16);
-        format = format.toUpper();
-        return QString("Manufacturer Specific (%1)").arg(format);
+        if (manufacturerSpecific)
+            *manufacturerSpecific = true;
+        return QObject::tr("Manufacturer Specific (0x%1)").arg(hexformat);
     }
-    return QObject::tr("Unknown (0x%1)").arg(paramId, 0, 16);
+
+    return QObject::tr("Unknown (0x%1)").arg(hexformat);
 }
 
 

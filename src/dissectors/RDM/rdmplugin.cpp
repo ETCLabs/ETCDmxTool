@@ -81,81 +81,101 @@ QVariant RdmPlugin::getDestination(const Packet &p)
 
 QVariant RdmPlugin::getInfo(const Packet &p, int role)
 {
-    QString sInfo;
-    QVariant cInfo;
-
-    if (p[0]==E110_SC::RDM)
+    switch(role)
     {
-        if(p.length() < RDM_MIN_BYTES) {
-            sInfo = "TOO SHORT: " + QString::number(p.length()) + " bytes";
-            cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
-        } else {
-            switch(p[RDM_MESSAGE_BLOCK + RDM_CC])
+        default: return QVariant();
+        case Qt::DisplayRole:
+        {
+            QString sInfo;
+            if (p[0]==E110_SC::RDM)
             {
-            case E120_DISCOVERY_COMMAND:
-                sInfo = "DISCOVERY ";
-                break;
-            case E120_DISCOVERY_COMMAND_RESPONSE:
-                sInfo = "DISCOVERY RESPONSE ";
-                break;
-            case E120_GET_COMMAND:
-                sInfo = "GET ";
-                break;
-            case E120_GET_COMMAND_RESPONSE:
-                sInfo = QString("GET %1 ").arg(RDM_PIDString::responseTypeToString(p[RDM_RESPONSE_TYPE]));
-                break;
-            case E120_SET_COMMAND:
-                sInfo = "SET ";
-                break;
-            case E120_SET_COMMAND_RESPONSE:
-                sInfo = QString("SET %1 ").arg(RDM_PIDString::responseTypeToString(p[RDM_RESPONSE_TYPE]));
-                break;
+                if(p.length() < RDM_MIN_BYTES) {
+                    sInfo = "TOO SHORT: " + QString::number(p.length()) + " bytes";
+                } else {
+                    const uint8_t cc = p[RDM_MESSAGE_BLOCK + RDM_CC];
+                    const quint16 paramId = Util::unpackU16(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID);
+
+                    switch(cc)
+                    {
+                    case E120_DISCOVERY_COMMAND:
+                        sInfo = QStringLiteral("DISCOVERY ");
+                        break;
+                    case E120_DISCOVERY_COMMAND_RESPONSE:
+                        sInfo = QStringLiteral("DISCOVERY RESPONSE ");
+                        break;
+                    case E120_GET_COMMAND:
+                        sInfo = QStringLiteral("GET ");
+                        break;
+                    case E120_GET_COMMAND_RESPONSE:
+                        sInfo = QStringLiteral("GET %1 ").arg(RDM_PIDString::responseTypeToString(p[RDM_RESPONSE_TYPE]));
+                        break;
+                    case E120_SET_COMMAND:
+                        sInfo = QStringLiteral("SET ");
+                        break;
+                    case E120_SET_COMMAND_RESPONSE:
+                        sInfo = QStringLiteral("SET %1 ").arg(RDM_PIDString::responseTypeToString(p[RDM_RESPONSE_TYPE]));
+                        break;
+                    }
+
+                    sInfo.append(Util::paramIdToString(paramId));
+
+                    // GET PARAMETER_DESCRIPTION should mention which PID is being requested
+                    if (E120_PARAMETER_DESCRIPTION == paramId)
+                    {
+                        quint16 aboutPid = Util::unpackU16(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA);
+                        sInfo = sInfo + QStringLiteral(" for 0x") + QString::number(aboutPid, 16).toUpper();
+                    }
+                    else if(paramId == E120_DISC_UNIQUE_BRANCH )
+                    {
+                        // Append the search address info
+                        quint64 lowerBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA);
+                        quint64 upperBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA + RDM_UID_LENGTH);
+                        quint64 searchLength = 1+upperBound-lowerBound;
+                        sInfo.append(QStringLiteral(" from %1 to %2 (%3 address%4) ")
+                                         .arg(
+                                             formatRdmUid(lowerBound, false),
+                                             formatRdmUid(upperBound, false),
+                                             QLocale().toString(searchLength),
+                                             searchLength > 1 ? "es" : ""));
+                    }
+                }
+
+            }
+            else
+            {
+                // Discovery Response
+                sInfo = QStringLiteral("DISCOVERY DISC_UNIQUE_BRANCH RESPONSE");
             }
 
-            quint16 paramId = p[RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID] << 8 | p[RDM_MESSAGE_BLOCK + RDM_PARAMETER_ID + 1];
-            sInfo.append(Util::paramIdToString(paramId));
-
-            if(p[RDM_MESSAGE_BLOCK + RDM_CC] == E120_DISCOVERY_COMMAND &&
-                 paramId == E120_DISC_UNIQUE_BRANCH )
-            {
-                // Append the search address info
-                quint64 lowerBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA);
-                quint64 upperBound = unpackRdmId(p, RDM_MESSAGE_BLOCK + RDM_PARAMETER_DATA + RDM_UID_LENGTH);
-                quint64 searchLength = 1+upperBound-lowerBound;
-                sInfo.append(QString(" from %1 to %2 (%3 address%4)")
-                             .arg(
-                                 formatRdmUid(lowerBound, false),
-                                 formatRdmUid(upperBound, false),
-                                 QLocale().toString(searchLength),
-                                 searchLength > 1 ? "es" : ""));
-
-            }
-
-            {
-                // Validate packet
-                QTreeWidgetItem dummyWidgetItem;
-                if (dissectRdm(p, &dummyWidgetItem) == FRAME_INVALID)
-                    cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
-            }
+            return sInfo;
         }
 
-    }
-    else
-    {
-        // Discovery Response
-        sInfo = "DISCOVERY DISC_UNIQUE_BRANCH RESPONSE";
-        quint64 decodedId;
-        if(!quickValidateDiscoveryResponse(p, decodedId))
-            cInfo = DISCOVERY_COLLISION_BACKGROUND;
-    }
+        case Qt::BackgroundRole:
+        {
+            QVariant cInfo;
 
-    switch (role) {
-    case Qt::DisplayRole:
-        return sInfo;
-    case Qt::BackgroundRole:
-        return cInfo;
-    default:
-        return QVariant();
+            if (p[0]==E110_SC::RDM)
+            {
+                if(p.length() < RDM_MIN_BYTES) {
+                    cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
+                } else {
+                    // Validate packet
+                    QTreeWidgetItem dummyWidgetItem;
+                    if (dissectRdm(p, &dummyWidgetItem) == FRAME_INVALID)
+                        cInfo = Packet::Invalid::INVALID_PACKET_BACKGROUND;
+                }
+
+            }
+            else
+            {
+                // Discovery Response
+                quint64 decodedId;
+                if(!quickValidateDiscoveryResponse(p, decodedId))
+                    cInfo = DISCOVERY_COLLISION_BACKGROUND;
+            }
+
+            return cInfo;
+        }
     }
 }
 
