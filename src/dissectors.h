@@ -25,6 +25,7 @@
 #include <QTreeWidget>
 #include <QList>
 #include <QLibrary>
+#include <QDir>
 #include "packetbuffer.h"
 #include "dissectors/dissectorplugin.h"
 
@@ -60,6 +61,8 @@ signals:
 public slots:
 
 private:
+    void load(QDir sourcePath);
+
     QList<s_DissectorList*> m_dissectors;
 
 #if defined (Q_OS_WIN)

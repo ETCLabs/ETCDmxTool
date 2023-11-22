@@ -137,6 +137,7 @@ Section "Main Application" sec01
 	
 	;Shortcuts
 	CreateDirectory '$SMPROGRAMS\${PRODUCT_NAME}'
+	SetOutPath '$INSTDIR' ;Used by CreateShortcut as the "Start In" path
 	CreateShortcut '$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk' '$INSTDIR\${PRODUCT_NAME}.exe'
 	;create shortcut for uninstaller always use ${UNINST_EXE} instead of uninstall.exe
 	CreateShortcut '$SMPROGRAMS\${PRODUCT_NAME}\uninstall.lnk' '${UNINST_EXE}'
