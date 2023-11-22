@@ -39,10 +39,6 @@ win32 {
     QMAKE_LFLAGS += /INCREMENTAL:NO /Debug
 }
 
-# Hardware includes
-include($$PWD/Whip.pri)
-include($$PWD/Gadget.pri)
-
 # Source
 INCLUDEPATH *= $$PWD/src
 
@@ -118,6 +114,10 @@ CONFIG(release, debug|release) {
 TARGET_CUSTOM_EXT = .exe
 DEPLOY_DIR = $$shell_quote($$system_path($${_PRO_FILE_PWD_}/install/deploy))
 DEPLOY_TARGET = $$shell_quote($$system_path($${DESTDIR}/$${TARGET}$${TARGET_CUSTOM_EXT}))
+
+# Hardware includes
+include($$PWD/Whip.pri)
+include($$PWD/Gadget.pri)
 
 # Configure Release deployment
 CONFIG(release, debug|release) {
